@@ -13,7 +13,8 @@ import {
   ChevronRight,
   Search,
   TrendingUp,
-  BarChart3
+  BarChart3,
+  RotateCcw
 } from 'lucide-react';
 import { TaskService } from './services/TaskService';
 import TaskModal from './components/TaskModal';
@@ -46,7 +47,23 @@ const App = () => {
   }, []);
 
   const toggleTask = (id) => {
-    setTasks(prev => prev.map(t => t.id === id ? { ...t, completed: !t.completed } : t));
+    setTasks(prev => {
+      const task = prev.find(t => t.id === id);
+      if (!task) return prev;
+
+      const isCompleting = !task.completed;
+      let newTasks = prev.map(t => t.id === id ? { ...t, completed: isCompleting } : t);
+
+      // Handle Recurrence
+      if (isCompleting && task.recurrence && task.recurrence !== 'none') {
+        const nextTask = TaskService.handleRecurrence(task);
+        if (nextTask) {
+          newTasks = [nextTask, ...newTasks];
+        }
+      }
+
+      return newTasks;
+    });
   };
 
   const toggleStar = (id) => {
@@ -229,7 +246,7 @@ const App = () => {
                         <p className={`text-lg transition-all ${task.completed ? 'line-through text-on-variant/50' : 'text-on-surface'}`}>
                           {task.title}
                         </p>
-                        <div className="flex flex-wrap gap-2 mt-1.5">
+                        <div className="flex flex-wrap gap-2 mt-1.5 items-center">
                           {task.category && (
                             <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider text-white ${
                               task.category === 'work' ? 'bg-google-green' :
@@ -239,6 +256,12 @@ const App = () => {
                             }`}>
                               {task.category}
                             </span>
+                          )}
+                          {task.recurrence && task.recurrence !== 'none' && (
+                            <div className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-on-variant/50 bg-gray-100 px-2 py-0.5 rounded-full">
+                              <RotateCcw size={10} />
+                              <span>{task.recurrence}</span>
+                            </div>
                           )}
                           {task.details && (
                             <p className="text-sm text-on-variant leading-relaxed">

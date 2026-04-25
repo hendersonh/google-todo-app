@@ -31,8 +31,29 @@ export const TaskService = {
       completed: false,
       starred: false,
       category: 'personal',
+      recurrence: 'none',
       createdAt: new Date().toISOString(),
       ...taskData
     };
+  },
+
+  handleRecurrence: (task) => {
+    if (!task.recurrence || task.recurrence === 'none') return null;
+
+    const nextDate = new Date(task.dueDate || new Date());
+    if (task.recurrence === 'daily') nextDate.setDate(nextDate.getDate() + 1);
+    else if (task.recurrence === 'weekly') nextDate.setDate(nextDate.getDate() + 7);
+    else if (task.recurrence === 'monthly') nextDate.setMonth(nextDate.getMonth() + 1);
+
+    const nextTask = TaskService.createTask({
+      title: task.title,
+      details: task.details,
+      category: task.category,
+      starred: task.starred,
+      recurrence: task.recurrence,
+      dueDate: nextDate.toISOString().split('T')[0]
+    });
+
+    return nextTask;
   }
 };

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Calendar, Star, Tag } from 'lucide-react';
+import { X, Calendar, Star, Tag, RotateCcw } from 'lucide-react';
 
 const CATEGORIES = [
   { id: 'personal', label: 'Personal', color: 'bg-google-blue' },
@@ -8,12 +8,20 @@ const CATEGORIES = [
   { id: 'shopping', label: 'Shopping', color: 'bg-google-yellow' },
 ];
 
+const RECURRENCE_OPTIONS = [
+  { id: 'none', label: 'None' },
+  { id: 'daily', label: 'Daily' },
+  { id: 'weekly', label: 'Weekly' },
+  { id: 'monthly', label: 'Monthly' },
+];
+
 const TaskModal = ({ isOpen, onClose, onSave, initialData }) => {
   const [title, setTitle] = useState('');
   const [details, setDetails] = useState('');
   const [starred, setStarred] = useState(false);
   const [dueDate, setDueDate] = useState('');
   const [category, setCategory] = useState('personal');
+  const [recurrence, setRecurrence] = useState('none');
   
   const dateInputRef = useRef(null);
 
@@ -24,12 +32,14 @@ const TaskModal = ({ isOpen, onClose, onSave, initialData }) => {
       setStarred(initialData.starred || false);
       setDueDate(initialData.dueDate || '');
       setCategory(initialData.category || 'personal');
+      setRecurrence(initialData.recurrence || 'none');
     } else {
       setTitle('');
       setDetails('');
       setStarred(false);
       setDueDate('');
       setCategory('personal');
+      setRecurrence('none');
     }
   }, [initialData, isOpen]);
 
@@ -44,7 +54,8 @@ const TaskModal = ({ isOpen, onClose, onSave, initialData }) => {
       details, 
       starred,
       dueDate,
-      category
+      category,
+      recurrence
     });
     onClose();
   };
@@ -125,6 +136,19 @@ const TaskModal = ({ isOpen, onClose, onSave, initialData }) => {
                     value={dueDate}
                     onChange={(e) => setDueDate(e.target.value)}
                   />
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <RotateCcw size={18} className="text-on-variant" />
+                  <select 
+                    value={recurrence}
+                    onChange={(e) => setRecurrence(e.target.value)}
+                    className="bg-transparent border-none text-sm text-on-variant focus:ring-0 p-0 cursor-pointer hover:text-google-blue transition-colors"
+                  >
+                    {RECURRENCE_OPTIONS.map(opt => (
+                      <option key={opt.id} value={opt.id}>{opt.label}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
             </div>

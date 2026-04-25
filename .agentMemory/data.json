@@ -1,0 +1,47 @@
+{
+  "cache": [
+    [
+      "google-todo-app:_index_google-todo-app",
+      {
+        "value": "{\"value\":[\"persistence-v1\",\"categorization-v1\",\"search-v1\",\"insights-v1\",\"mcp-config-v1\",\"recurring-tasks-plan-v1\"],\"expires\":null}"
+      }
+    ],
+    [
+      "google-todo-app:persistence-v1",
+      {
+        "value": "{\"value\":{\"key\":\"persistence-v1\",\"type\":\"decision\",\"content\":\"Implemented a Single Source of Truth persistence layer. State is initialized directly from localStorage. A useEffect hook watches the tasks state and persists changes instantly. Added a window storage event listener to synchronize tasks across multiple browser tabs.\",\"tags\":[\"persistence\",\"localStorage\",\"sync\",\"architecture\"],\"metadata\":{\"importance\":\"critical\",\"file\":\"App.jsx\",\"accessCount\":0},\"createdAt\":1777139766714,\"updatedAt\":1777139766714},\"expires\":null}"
+      }
+    ],
+    [
+      "google-todo-app:categorization-v1",
+      {
+        "value": "{\"value\":{\"key\":\"categorization-v1\",\"type\":\"pattern\",\"content\":\"Added color-coded task categorization (Personal, Work, Urgent, Shopping). Implemented context-aware filtering where the sidebar acts as a list switcher, filtering the main view based on the task.category field.\",\"tags\":[\"categorization\",\"filtering\",\"ui\"],\"metadata\":{\"importance\":\"high\",\"component\":\"TaskModal\",\"accessCount\":0},\"createdAt\":1777139766716,\"updatedAt\":1777139766716},\"expires\":null}"
+      }
+    ],
+    [
+      "google-todo-app:search-v1",
+      {
+        "value": "{\"value\":{\"key\":\"search-v1\",\"type\":\"feature\",\"content\":\"Universal real-time search implemented in the header. Filters tasks by matching searchQuery against both title and details. Integrated into the main task filtering pipeline to work alongside category and status filters.\",\"tags\":[\"search\",\"ux\"],\"metadata\":{\"importance\":\"medium\",\"component\":\"App.jsx\",\"accessCount\":0},\"createdAt\":1777139766716,\"updatedAt\":1777139766716},\"expires\":null}"
+      }
+    ],
+    [
+      "google-todo-app:insights-v1",
+      {
+        "value": "{\"value\":{\"key\":\"insights-v1\",\"type\":\"feature\",\"content\":\"Productivity Insights dashboard calculates real-time completion rates and categorical focus breakdown. Uses CSS-only progress bars for focus analysis. Updates dynamically as tasks are completed.\",\"tags\":[\"analytics\",\"insights\",\"dashboard\"],\"metadata\":{\"importance\":\"medium\",\"component\":\"StatsDashboard\",\"accessCount\":0},\"createdAt\":1777139766717,\"updatedAt\":1777139766717},\"expires\":null}"
+      }
+    ],
+    [
+      "google-todo-app:mcp-config-v1",
+      {
+        "value": "{\"value\":{\"id\":\"67acc019-df5a-48c3-964e-1e6eadb347ed\",\"projectId\":\"google-todo-app\",\"key\":\"mcp-config-v1\",\"type\":\"decision\",\"content\":\"Registered the agent-memory-mcp server in /home/ubuntu/.gemini/antigravity/mcp_config.json for automatic lifecycle management. The server is configured with project ID 'google-todo-app' and workspace path '/home/ubuntu/todolist'. It exposes tools like memory_write, memory_search, and memory_read. This eliminates the need for manual server startup and integrates the memory bank natively into the Antigravity agent toolkit.\",\"tags\":[\"mcp\",\"config\",\"automation\",\"setup\"],\"relationships\":{},\"metadata\":{\"accessCount\":0,\"createdBy\":\"agent\"},\"createdAt\":1777140367014,\"updatedAt\":1777140367014},\"expires\":null}"
+      }
+    ],
+    [
+      "google-todo-app:recurring-tasks-plan-v1",
+      {
+        "value": "{\"value\":{\"id\":\"9092dda3-0895-419f-b0cc-77e5d3104b88\",\"projectId\":\"google-todo-app\",\"key\":\"recurring-tasks-plan-v1\",\"type\":\"feature\",\"content\":\"# Implementation Plan: Recurring Tasks\\nAdd the ability for users to set tasks to repeat daily, weekly, or monthly. When a recurring task is completed, a new instance is created for the next interval.\\n## Scope\\n- In: recurrence field, TaskService recurrence engine, TaskModal UI selector.\\n- Out: Complex rules, notifications.\\n## Action Items\\n1. Modify Task schema to support recurrence.\\n2. Add UI selection in TaskModal.\\n3. Implement handleRecurrence in TaskService to calculate next dueDate.\\n4. Update toggleTask logic in App.jsx to trigger recurrence.\\n5. Add visual 'Repeat' icon to tasks.\\n\",\"tags\":[\"plan\",\"recurring-tasks\",\"roadmap\"],\"relationships\":{},\"metadata\":{\"accessCount\":0,\"createdBy\":\"agent\"},\"createdAt\":1777140985984,\"updatedAt\":1777140985984},\"expires\":null}"
+      }
+    ]
+  ],
+  "lastExpire": 1777139766715
+}
