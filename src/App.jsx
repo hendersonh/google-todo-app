@@ -263,6 +263,11 @@ const App = () => {
                               <span>{task.recurrence}</span>
                             </div>
                           )}
+                          {task.subtasks && task.subtasks.length > 0 && (
+                            <div className="flex items-center gap-1 text-[10px] font-bold text-google-blue bg-blue-50 px-2 py-0.5 rounded-full">
+                              <span>{task.subtasks.filter(s => s.completed).length}/{task.subtasks.length} sub-tasks</span>
+                            </div>
+                          )}
                           {task.details && (
                             <p className="text-sm text-on-variant leading-relaxed">
                               {task.details}

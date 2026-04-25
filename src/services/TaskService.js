@@ -32,6 +32,7 @@ export const TaskService = {
       starred: false,
       category: 'personal',
       recurrence: 'none',
+      subtasks: [],
       createdAt: new Date().toISOString(),
       ...taskData
     };

@@ -3,7 +3,7 @@
     [
       "google-todo-app:_index_google-todo-app",
       {
-        "value": "{\"value\":[\"persistence-v1\",\"categorization-v1\",\"search-v1\",\"insights-v1\",\"mcp-config-v1\",\"recurring-tasks-plan-v1\"],\"expires\":null}"
+        "value": "{\"value\":[\"persistence-v1\",\"categorization-v1\",\"search-v1\",\"insights-v1\",\"mcp-config-v1\",\"recurring-tasks-plan-v1\",\"subtasks-plan-v1\",\"skill-index-v1\"],\"expires\":null}"
       }
     ],
     [
@@ -40,6 +40,18 @@
       "google-todo-app:recurring-tasks-plan-v1",
       {
         "value": "{\"value\":{\"id\":\"9092dda3-0895-419f-b0cc-77e5d3104b88\",\"projectId\":\"google-todo-app\",\"key\":\"recurring-tasks-plan-v1\",\"type\":\"feature\",\"content\":\"# Implementation Plan: Recurring Tasks\\nAdd the ability for users to set tasks to repeat daily, weekly, or monthly. When a recurring task is completed, a new instance is created for the next interval.\\n## Scope\\n- In: recurrence field, TaskService recurrence engine, TaskModal UI selector.\\n- Out: Complex rules, notifications.\\n## Action Items\\n1. Modify Task schema to support recurrence.\\n2. Add UI selection in TaskModal.\\n3. Implement handleRecurrence in TaskService to calculate next dueDate.\\n4. Update toggleTask logic in App.jsx to trigger recurrence.\\n5. Add visual 'Repeat' icon to tasks.\\n\",\"tags\":[\"plan\",\"recurring-tasks\",\"roadmap\"],\"relationships\":{},\"metadata\":{\"accessCount\":0,\"createdBy\":\"agent\"},\"createdAt\":1777140985984,\"updatedAt\":1777140985984},\"expires\":null}"
+      }
+    ],
+    [
+      "google-todo-app:subtasks-plan-v1",
+      {
+        "value": "{\"value\":{\"id\":\"4add1855-f726-4e73-9702-232fb99c7d6d\",\"projectId\":\"google-todo-app\",\"key\":\"subtasks-plan-v1\",\"type\":\"feature\",\"content\":\"# Implementation Plan: Sub-tasks (Nested Checklists)\\nEnable one-level nesting of tasks. Users can add a list of checklist items within a single task to track granular progress.\\n## Scope\\n- In: subtasks array [{id, title, completed}], Modal UI for management, Progress fraction in main list.\\n- Out: Deep nesting, sub-task due dates.\\n## Action Items\\n1. Update Task schema with subtasks array.\\n2. Build Sub-task management UI in TaskModal.\\n3. Implement progress tracking logic (completed/total).\\n4. Show \\\"X/Y\\\" progress indicator in task rows.\\n\",\"tags\":[\"plan\",\"subtasks\",\"roadmap\"],\"relationships\":{},\"metadata\":{\"accessCount\":0,\"createdBy\":\"agent\"},\"createdAt\":1777141965137,\"updatedAt\":1777141965137},\"expires\":null}"
+      }
+    ],
+    [
+      "google-todo-app:skill-index-v1",
+      {
+        "value": "{\"value\":{\"id\":\"4f307d71-8109-4f3e-ba4a-975174e52fd2\",\"projectId\":\"google-todo-app\",\"key\":\"skill-index-v1\",\"type\":\"pattern\",\"content\":\"# Active Skills Index - google-todo-app\\nA list of skills currently utilized and preferred for this project.\\n- **agent-memory-mcp**: Used for project-wide indexing and fast context recall.\\n- **kaizen**: The primary framework for brainstorming and continuous feature improvement.\\n- **concise-planning**: Used for creating atomic implementation plans for new features.\\n- **git-pushing**: Managed workflow for conventional commits and remote synchronization.\\n- **frontend-design**: Used for Google/Material-inspired UI and aesthetics.\\n- **systematic-debugging**: Used for diagnosing and fixing complex state/persistence issues.\\n\",\"tags\":[\"meta\",\"skills\",\"index\"],\"relationships\":{},\"metadata\":{\"accessCount\":0,\"createdBy\":\"agent\"},\"createdAt\":1777143143543,\"updatedAt\":1777143143543},\"expires\":null}"
       }
     ]
   ],
