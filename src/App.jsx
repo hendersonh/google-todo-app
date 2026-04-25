@@ -10,48 +10,88 @@ import {
   Trash2,
   Clock,
   MoreVertical,
-  ChevronRight
+  ChevronRight,
+  Search,
+  TrendingUp,
+  BarChart3
 } from 'lucide-react';
 import { TaskService } from './services/TaskService';
-import AddTaskModal from './components/AddTaskModal';
+import TaskModal from './components/TaskModal';
 import TimelineView from './components/TimelineView';
+import StatsDashboard from './components/StatsDashboard';
 
 const App = () => {
-  const [tasks, setTasks] = useState([]);
+  // Initialize state directly from LocalStorage (Single Source of Truth)
+  const [tasks, setTasks] = useState(() => TaskService.getTasks());
   const [activeTab, setActiveTab] = useState('all');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
+  // Persist tasks whenever they change
   useEffect(() => {
-    setTasks(TaskService.getTasks());
+    TaskService.saveTasks(tasks);
+  }, [tasks]);
+
+  // Sync between tabs (Multi-tab support)
+  useEffect(() => {
+    const handleStorage = (e) => {
+      if (e.key === 'google_todo_tasks') {
+        setTasks(TaskService.getTasks());
+      }
+    };
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
   }, []);
 
   const toggleTask = (id) => {
-    const task = tasks.find(t => t.id === id);
-    const updated = TaskService.updateTask(id, { completed: !task.completed });
-    setTasks(updated);
+    setTasks(prev => prev.map(t => t.id === id ? { ...t, completed: !t.completed } : t));
   };
 
   const toggleStar = (id) => {
-    const task = tasks.find(t => t.id === id);
-    const updated = TaskService.updateTask(id, { starred: !task.starred });
-    setTasks(updated);
+    setTasks(prev => prev.map(t => t.id === id ? { ...t, starred: !t.starred } : t));
   };
 
   const deleteTask = (id) => {
-    const updated = TaskService.deleteTask(id);
-    setTasks(updated);
+    setTasks(prev => prev.filter(t => t.id !== id));
   };
 
-  const addTask = (taskData) => {
-    const newTask = TaskService.addTask(taskData);
-    setTasks([newTask, ...tasks]);
+  const handleSaveTask = (taskData) => {
+    if (taskData.id) {
+      setTasks(prev => prev.map(t => t.id === taskData.id ? { ...t, ...taskData } : t));
+    } else {
+      const newTask = TaskService.createTask(taskData);
+      setTasks(prev => [newTask, ...prev]);
+    }
+    setEditingTask(null);
+  };
+
+  const openEditModal = (task) => {
+    if (!task.completed) {
+      setEditingTask(task);
+      setIsModalOpen(true);
+    }
   };
 
   const filteredTasks = tasks.filter(task => {
+    const matchesSearch = 
+      task.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      (task.details && task.details.toLowerCase().includes(searchQuery.toLowerCase()));
+
+    if (!matchesSearch) return false;
+
     if (activeTab === 'all') return !task.completed;
     if (activeTab === 'starred') return task.starred;
     if (activeTab === 'completed') return task.completed;
+    if (activeTab === 'schedule') return true;
+    if (activeTab === 'insights') return true;
+    
+    // Category filtering
+    if (['personal', 'work', 'urgent', 'shopping'].includes(activeTab)) {
+      return task.category === activeTab && !task.completed;
+    }
+    
     return true;
   });
 
@@ -60,6 +100,14 @@ const App = () => {
     { id: 'starred', label: 'Starred', icon: Star },
     { id: 'completed', label: 'Completed', icon: CheckCircle2 },
     { id: 'schedule', label: 'Schedule', icon: Calendar },
+    { id: 'insights', label: 'Insights', icon: BarChart3 },
+  ];
+
+  const categories = [
+    { id: 'personal', label: 'Personal', color: 'bg-google-blue' },
+    { id: 'work', label: 'Work', color: 'bg-google-green' },
+    { id: 'urgent', label: 'Urgent', color: 'bg-google-red' },
+    { id: 'shopping', label: 'Shopping', color: 'bg-google-yellow' },
   ];
 
   return (
@@ -85,6 +133,24 @@ const App = () => {
               {activeTab === item.id && <ChevronRight size={16} className="opacity-50" />}
             </div>
           ))}
+
+          <div className="mt-8 px-4 mb-2">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-on-variant/50">My Lists</p>
+          </div>
+          
+          {categories.map(cat => (
+            <div 
+              key={cat.id}
+              onClick={() => setActiveTab(cat.id)}
+              className={`google-sidebar-item ${activeTab === cat.id ? 'active' : ''}`}
+            >
+              <div className={`w-2 h-2 rounded-full ${cat.color}`} />
+              <span className="flex-1">{cat.label}</span>
+              <span className="text-[10px] opacity-50 bg-gray-100 px-1.5 py-0.5 rounded-full">
+                {tasks.filter(t => t.category === cat.id && !t.completed).length}
+              </span>
+            </div>
+          ))}
         </nav>
       </aside>
 
@@ -100,8 +166,23 @@ const App = () => {
               <Menu size={24} />
             </button>
             <h2 className="text-2xl font-medium text-on-surface">
-              {sidebarItems.find(i => i.id === activeTab)?.label}
+              {sidebarItems.find(i => i.id === activeTab)?.label || categories.find(c => c.id === activeTab)?.label}
             </h2>
+          </div>
+          
+          <div className="flex-1 max-w-2xl mx-12">
+            <div className="relative group">
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-on-variant/50 group-focus-within:text-google-blue transition-colors">
+                <Search size={20} />
+              </div>
+              <input 
+                type="text"
+                placeholder="Search tasks..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-surface-variant/50 border-none rounded-xl py-3 pl-12 pr-4 focus:bg-white focus:ring-2 focus:ring-google-blue/20 transition-all placeholder:text-on-variant/40"
+              />
+            </div>
           </div>
           
           <div className="flex items-center gap-4">
@@ -118,6 +199,10 @@ const App = () => {
         <div className="flex-1 overflow-y-auto bg-white flex flex-col">
           {activeTab === 'schedule' ? (
             <TimelineView tasks={tasks} />
+          ) : activeTab === 'insights' ? (
+            <div className="max-w-4xl mx-auto w-full">
+              <StatsDashboard tasks={tasks} />
+            </div>
           ) : (
             <div className="max-w-4xl mx-auto w-full py-10 px-8">
               {filteredTasks.length === 0 ? (
@@ -130,6 +215,7 @@ const App = () => {
                   {filteredTasks.map(task => (
                     <div 
                       key={task.id} 
+                      onClick={() => openEditModal(task)}
                       className="group flex items-start gap-5 p-5 hover:bg-gray-50 rounded-2xl transition-all cursor-pointer border-b border-gray-50/50"
                     >
                       <button 
@@ -143,11 +229,23 @@ const App = () => {
                         <p className={`text-lg transition-all ${task.completed ? 'line-through text-on-variant/50' : 'text-on-surface'}`}>
                           {task.title}
                         </p>
-                        {task.details && (
-                          <p className="text-sm text-on-variant mt-1.5 leading-relaxed">
-                            {task.details}
-                          </p>
-                        )}
+                        <div className="flex flex-wrap gap-2 mt-1.5">
+                          {task.category && (
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider text-white ${
+                              task.category === 'work' ? 'bg-google-green' :
+                              task.category === 'urgent' ? 'bg-google-red' :
+                              task.category === 'shopping' ? 'bg-google-yellow' :
+                              'bg-google-blue'
+                            }`}>
+                              {task.category}
+                            </span>
+                          )}
+                          {task.details && (
+                            <p className="text-sm text-on-variant leading-relaxed">
+                              {task.details}
+                            </p>
+                          )}
+                        </div>
                         {task.dueDate && (
                           <div className="flex items-center gap-2 text-xs font-medium text-google-blue mt-3 bg-blue-50 w-fit px-2 py-1 rounded-md">
                             <Clock size={12} />
@@ -180,17 +278,18 @@ const App = () => {
 
         {/* FAB */}
         <button 
-          onClick={() => setIsModalOpen(true)}
+          onClick={() => { setEditingTask(null); setIsModalOpen(true); }}
           className="absolute bottom-10 right-10 w-16 h-16 bg-google-blue text-white rounded-[20px] shadow-2xl shadow-blue-200 flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-10 group"
         >
           <Plus size={36} className="group-hover:rotate-90 transition-transform duration-300" />
         </button>
       </main>
 
-      <AddTaskModal 
+      <TaskModal 
         isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
-        onAdd={addTask} 
+        onClose={() => { setIsModalOpen(false); setEditingTask(null); }} 
+        onSave={handleSaveTask} 
+        initialData={editingTask}
       />
     </div>
   );

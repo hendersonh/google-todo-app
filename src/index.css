@@ -1,13 +1,25 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+  --color-google-blue: #4285F4;
+  --color-google-red: #EA4335;
+  --color-google-yellow: #FBBC05;
+  --color-google-green: #34A853;
+  
+  --color-surface: #FFFFFF;
+  --color-surface-variant: #F1F3F4;
+  --color-surface-hover: #F8F9FA;
+  
+  --color-on-surface: #202124;
+  --color-on-variant: #5F6368;
+
+  --font-sans: "Outfit", "Inter", system-ui, sans-serif;
+
+  --shadow-google: 0 1px 2px 0 rgba(60,64,67,0.302), 0 1px 3px 1px rgba(60,64,67,0.149);
+  --shadow-google-hover: 0 1px 3px 0 rgba(60,64,67,0.302), 0 4px 8px 3px rgba(60,64,67,0.149);
+}
 
 @layer base {
-  :root {
-    --color-on-surface: #202124;
-    --color-surface: #FFFFFF;
-  }
-
   body {
     @apply bg-surface text-on-surface font-sans m-0 min-h-screen;
   }
