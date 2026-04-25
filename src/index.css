@@ -1,0 +1,32 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-on-surface: #202124;
+    --color-surface: #FFFFFF;
+  }
+
+  body {
+    @apply bg-surface text-on-surface font-sans m-0 min-h-screen;
+  }
+}
+
+@layer components {
+  .google-card {
+    @apply bg-white rounded-lg shadow-google hover:shadow-google-hover transition-shadow duration-200;
+  }
+  
+  .google-btn-primary {
+    @apply bg-google-blue text-white px-6 py-2 rounded-full font-medium shadow-sm hover:shadow-google-hover transition-all active:scale-95;
+  }
+
+  .google-sidebar-item {
+    @apply flex items-center gap-4 px-4 py-3 rounded-r-full cursor-pointer hover:bg-surface-hover text-on-variant hover:text-on-surface transition-colors;
+  }
+
+  .google-sidebar-item.active {
+    @apply bg-blue-50 text-google-blue font-medium;
+  }
+}
