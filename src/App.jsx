@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Menu, 
-  Plus, 
-  CheckCircle2, 
-  Circle, 
-  Calendar, 
-  ListTodo, 
-  Star, 
+import {
+  Menu,
+  Plus,
+  CheckCircle2,
+  Circle,
+  Calendar,
+  ListTodo,
+  Star,
   Trash2,
   Clock,
   MoreVertical,
@@ -16,15 +16,24 @@ import {
   BarChart3,
   RotateCcw,
   LogOut,
-  User
+  User,
+  Lock
 } from 'lucide-react';
 import { TaskService } from './services/TaskService';
 import TaskModal from './components/TaskModal';
 import CategoryModal from './components/CategoryModal';
 import TimelineView from './components/TimelineView';
 import StatsDashboard from './components/StatsDashboard';
+import StatusModal from './components/StatusModal';
 import { auth, googleProvider } from './firebase';
-import { signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
+import {
+  signInWithPopup,
+  GoogleAuthProvider,
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut
+} from 'firebase/auth';
 
 const App = () => {
   const [tasks, setTasks] = useState([]);
@@ -35,13 +44,11 @@ const App = () => {
     { id: 'urgent', label: 'Urgent', color: '#EA4335' },
     { id: 'shopping', label: 'Shopping', color: '#FBBC05' },
   ]);
-  
+
   // Dynamic Categories Listener
   useEffect(() => {
     if (user) {
       const unsubscribe = TaskService.subscribeToCategories(user.uid, (dynamicCats) => {
-        // If user has custom categories, we can either append them or replace the defaults
-        // For now, let's keep the defaults and append dynamic ones
         const defaults = [
           { id: 'personal', label: 'Personal', color: '#4285F4' },
           { id: 'work', label: 'Work', color: '#34A853' },
@@ -52,13 +59,7 @@ const App = () => {
       });
       return () => unsubscribe();
     } else {
-      // Revert to defaults if signed out
-      setCategories([
-        { id: 'personal', label: 'Personal', color: '#4285F4' },
-        { id: 'work', label: 'Work', color: '#34A853' },
-        { id: 'urgent', label: 'Urgent', color: '#EA4335' },
-        { id: 'shopping', label: 'Shopping', color: '#FBBC05' },
-      ]);
+      setCategories([]);
     }
   }, [user]);
 
@@ -66,35 +67,108 @@ const App = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  const [statusModal, setStatusModal] = useState({ isOpen: false, title: '', message: '' });
   const [editingTask, setEditingTask] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [authResolved, setAuthResolved] = useState(false);
 
   // ... rest of the state ...
 
 
   // Subscribe to real-time Firestore updates and Auth state
+  // Subscribe to auth state
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
-    });
-
-    const unsubscribeTasks = TaskService.subscribeToTasks((updatedTasks) => {
-      setTasks(updatedTasks);
-      setLoading(false);
+      setAuthResolved(true);
+      if (!currentUser) {
+        setLoading(false);
+      }
     });
 
     return () => {
       unsubscribeAuth();
-      unsubscribeTasks();
     };
   }, []);
 
+  // Subscribe to tasks when user changes
+  useEffect(() => {
+    if (!user) {
+      setTasks([]);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    // Safety timeout: If loading takes > 10s, something might be wrong
+    const timeoutId = setTimeout(() => {
+      if (loading) {
+        console.warn("Loading tasks timed out. Check network or Firestore indexes.");
+        setLoading(false);
+        setError("Sync is taking longer than expected. Please check your connection.");
+      }
+    }, 10000);
+
+    const unsubscribeTasks = TaskService.subscribeToTasks(user.uid, (updatedTasks) => {
+      clearTimeout(timeoutId);
+      setTasks(updatedTasks);
+      setLoading(false);
+      setError(null);
+    });
+
+    return () => {
+      unsubscribeTasks();
+      clearTimeout(timeoutId);
+    };
+  }, [user?.uid]);
+
+  const [authEmail, setAuthEmail] = useState('');
+  const [authPassword, setAuthPassword] = useState('');
+  const [authLoading, setAuthLoading] = useState(false);
+
   const handleSignIn = async () => {
     try {
-      await signInWithPopup(auth, googleProvider);
+      const provider = new GoogleAuthProvider();
+      await signInWithPopup(auth, provider);
     } catch (error) {
-      console.error("Error signing in", error);
+      console.error("Error signing in:", error);
+      alert("Sign in failed. Please try again.");
+    }
+  };
+
+  const handleEmailAuth = async (e) => {
+    e.preventDefault();
+    setAuthLoading(true);
+    setError(null);
+    try {
+      // Always try to sign in first
+      await signInWithEmailAndPassword(auth, authEmail, authPassword);
+    } catch (err) {
+      // If user doesn't exist, try to sign them up automatically
+      if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
+        try {
+          await createUserWithEmailAndPassword(auth, authEmail, authPassword);
+          return; // Success
+        } catch (signUpErr) {
+          console.error("Auto-signup error:", signUpErr);
+          let message = "Failed to create account.";
+          if (signUpErr.code === 'auth/email-already-in-use') message = "This email is already registered.";
+          if (signUpErr.code === 'auth/weak-password') message = "Password should be at least 6 characters.";
+          if (signUpErr.code === 'auth/invalid-email') message = "Invalid email format.";
+          setError(message);
+        }
+      } else {
+        console.error("Auth error:", err);
+        let message = "Authentication failed.";
+        if (err.code === 'auth/wrong-password') message = "Incorrect password.";
+        if (err.code === 'auth/invalid-email') message = "Invalid email format.";
+        setError(message);
+      }
+    } finally {
+      setAuthLoading(false);
     }
   };
 
@@ -107,7 +181,14 @@ const App = () => {
   };
 
   const toggleTask = async (task) => {
-    if (!user || task.userId !== user.uid) return;
+    if (task.userId !== user.uid) {
+      setStatusModal({
+        isOpen: true,
+        title: 'Access Restricted',
+        message: 'You cannot modify tasks owned by other users.'
+      });
+      return;
+    }
     const isCompleting = !task.completed;
     await TaskService.updateTask(task.id, { completed: isCompleting });
 
@@ -124,9 +205,21 @@ const App = () => {
     }
   };
 
-  const toggleStar = async (id, currentStarred, userId) => {
-    if (!user || userId !== user.uid) return;
-    await TaskService.updateTask(id, { starred: !currentStarred });
+  const toggleStar = async (e, task) => {
+    e.stopPropagation();
+    if (task.userId !== user.uid) {
+      setStatusModal({
+        isOpen: true,
+        title: 'Access Restricted',
+        message: 'You cannot modify tasks owned by other users.'
+      });
+      return;
+    }
+    try {
+      await TaskService.updateTask(task.id, { starred: !task.starred });
+    } catch (error) {
+      console.error("Error toggling star", error);
+    }
   };
 
   const deleteTask = async (id, userId) => {
@@ -139,7 +232,7 @@ const App = () => {
     const data = {
       ...taskData,
       userId: user.uid,
-      ownerName: user.displayName
+      ownerName: user.displayName || user.email || 'Anonymous'
     };
 
     if (data.id) {
@@ -153,9 +246,9 @@ const App = () => {
   const handleSaveCategory = async (categoryData) => {
     if (!user) return;
     try {
-      await TaskService.addCategory({ 
-        ...categoryData, 
-        ownerUid: user.uid 
+      await TaskService.addCategory({
+        ...categoryData,
+        ownerUid: user.uid
       });
     } catch (error) {
       console.error("Error saving category:", error);
@@ -168,39 +261,153 @@ const App = () => {
   };
 
   const filteredTasks = tasks.filter(task => {
-    const matchesSearch = 
-      task.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    const matchesSearch =
+      task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (task.details && task.details.toLowerCase().includes(searchQuery.toLowerCase()));
 
     if (!matchesSearch) return false;
 
     if (activeTab === 'all') return !task.completed;
-    if (activeTab === 'starred') return task.starred;
+    if (activeTab === 'starred') return task.starred && !task.completed;
     if (activeTab === 'completed') return task.completed;
-    if (activeTab === 'schedule') return true;
+    if (activeTab === 'schedule') return !task.completed;
     if (activeTab === 'insights') return true;
-    
+
     // Category filtering - check if activeTab exists in our categories list
     if (categories.some(cat => cat.id === activeTab)) {
       return task.category === activeTab && !task.completed;
     }
-    
+
     return true;
   });
 
   const sidebarItems = [
-    { id: 'all', label: 'My Tasks', icon: ListTodo },
+    { id: 'all', label: 'All Active Tasks', icon: ListTodo },
     { id: 'starred', label: 'Starred', icon: Star },
     { id: 'completed', label: 'Completed', icon: CheckCircle2 },
     { id: 'schedule', label: 'Schedule', icon: Calendar },
     { id: 'insights', label: 'Insights', icon: BarChart3 },
   ];
 
-  if (loading) {
+  if (!authResolved || (user && loading)) {
     return <div className="h-screen w-screen flex items-center justify-center bg-surface">
       <div className="flex flex-col items-center gap-4">
         <div className="w-12 h-12 border-4 border-google-blue border-t-transparent rounded-full animate-spin" />
-        <p className="text-sm font-medium text-on-variant animate-pulse">Loading Tasks...</p>
+        <p className="text-sm font-medium text-on-variant animate-pulse">Loading...</p>
+      </div>
+    </div>;
+  }
+
+  if (!user) {
+    return (
+      <div className="h-screen w-screen bg-surface flex items-center justify-center p-6 overflow-hidden">
+        {/* Decorative background elements */}
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-50/50 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-red-50/50 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+
+        <div className="max-w-xl w-full text-center space-y-12 relative z-10">
+          <div className="space-y-6">
+            <div className="w-24 h-24 bg-google-blue rounded-[28px] flex items-center justify-center text-white mx-auto shadow-2xl shadow-blue-100 transform -rotate-6 hover:rotate-0 transition-transform duration-500">
+              <CheckCircle2 size={48} />
+            </div>
+            <div className="space-y-2">
+              <h1 className="text-5xl font-bold tracking-tight text-on-surface">Organize your life</h1>
+              <p className="text-xl text-on-variant font-light">Simplify your day with the world's most elegant todo app.</p>
+            </div>
+          </div>
+
+          <div className="bg-white/80 backdrop-blur-xl p-10 rounded-[40px] shadow-2xl shadow-blue-50 border border-white/50 space-y-8">
+            <div className="space-y-4">
+              <div className="flex items-center justify-center gap-3 text-sm font-medium text-on-variant/60 uppercase tracking-widest">
+                <div className="h-[1px] w-8 bg-gray-200" />
+                <span>Sign in or Sign up</span>
+                <div className="h-[1px] w-8 bg-gray-200" />
+              </div>
+            </div>
+
+            <form onSubmit={handleEmailAuth} className="space-y-4">
+              <div className="space-y-2">
+                <input
+                  type="email"
+                  placeholder="Email address"
+                  value={authEmail}
+                  onChange={(e) => setAuthEmail(e.target.value)}
+                  className="w-full bg-gray-50 border-2 border-transparent focus:border-google-blue focus:bg-white p-4 rounded-2xl outline-none transition-all"
+                  required
+                />
+                <input
+                  type="password"
+                  placeholder="Password (min 6 characters)"
+                  value={authPassword}
+                  onChange={(e) => setAuthPassword(e.target.value)}
+                  className="w-full bg-gray-50 border-2 border-transparent focus:border-google-blue focus:bg-white p-4 rounded-2xl outline-none transition-all"
+                  required
+                />
+              </div>
+
+              {error && <p className="text-sm text-red-500 font-medium">{error}</p>}
+
+              <button
+                type="submit"
+                disabled={authLoading}
+                className="w-full bg-google-blue text-white py-4 px-6 rounded-2xl font-bold hover:bg-blue-600 transition-all active:scale-[0.98] shadow-lg shadow-blue-100 flex items-center justify-center gap-2"
+              >
+                {authLoading ? (
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <span>Continue</span>
+                )}
+              </button>
+            </form>
+
+            <div className="flex items-center gap-4 text-sm text-on-variant/40">
+              <div className="h-[1px] flex-1 bg-gray-100" />
+              <span>or</span>
+              <div className="h-[1px] flex-1 bg-gray-100" />
+            </div>
+
+            <button
+              onClick={handleSignIn}
+              className="w-full group relative flex items-center justify-center gap-4 bg-white border-2 border-gray-100 py-4 px-6 rounded-2xl font-semibold text-on-surface hover:bg-gray-50 hover:border-google-blue/30 transition-all active:scale-[0.98]"
+            >
+              <div className="w-6 h-6 flex items-center justify-center">
+                <svg viewBox="0 0 24 24" className="w-5 h-5">
+                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" />
+                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.66l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+                </svg>
+              </div>
+              <span>Continue with Google</span>
+            </button>
+
+            <p className="text-xs text-on-variant/50 leading-relaxed">
+              By signing in, you agree to our <span className="underline cursor-pointer hover:text-on-variant">Terms of Service</span> and <span className="underline cursor-pointer hover:text-on-variant">Privacy Policy</span>.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error && tasks.length === 0) {
+    return <div className="h-screen w-screen flex items-center justify-center bg-surface p-8">
+      <div className="max-w-md w-full bg-white p-8 rounded-3xl shadow-xl text-center space-y-6 animate-in fade-in zoom-in duration-500">
+        <div className="w-20 h-20 bg-red-50 text-google-red rounded-full flex items-center justify-center mx-auto">
+          <RotateCcw size={40} className="animate-spin-slow" />
+        </div>
+        <div className="space-y-2">
+          <h3 className="text-xl font-bold text-on-surface">Connection Slow</h3>
+          <p className="text-sm text-on-variant leading-relaxed">
+            {error}
+          </p>
+        </div>
+        <button
+          onClick={() => window.location.reload()}
+          className="w-full bg-google-blue text-white py-3 rounded-xl font-semibold hover:bg-blue-600 transition-all active:scale-95"
+        >
+          Retry Connection
+        </button>
       </div>
     </div>;
   }
@@ -216,44 +423,54 @@ const App = () => {
           </div>
           <h1 className="text-2xl font-semibold tracking-tight text-on-surface">Tasks</h1>
         </div>
-        
+
         {/* Scrollable Navigation Area */}
         <div className="flex-1 overflow-y-auto google-scrollbar px-2 py-2">
           <nav className="flex flex-col gap-1 pr-2">
             {sidebarItems.map(item => (
-              <div 
+              <div
                 key={item.id}
                 onClick={() => setActiveTab(item.id)}
                 className={`google-sidebar-item ${activeTab === item.id ? 'active' : ''}`}
               >
                 <item.icon size={20} fill={activeTab === item.id && item.id === 'starred' ? 'currentColor' : 'none'} />
                 <span className="flex-1">{item.label}</span>
-                {activeTab === item.id && <ChevronRight size={16} className="opacity-50" />}
+                <span className="text-[10px] opacity-50 bg-gray-100 px-1.5 py-0.5 rounded-full">
+                  {item.id === 'all' ? tasks.filter(t => !t.completed).length :
+                    item.id === 'starred' ? tasks.filter(t => t.starred && !t.completed).length :
+                      item.id === 'completed' ? tasks.filter(t => t.completed).length :
+                        item.id === 'schedule' ? tasks.filter(t => !t.completed).length : 0}
+                </span>
               </div>
             ))}
 
             <div className="mt-8 px-4 mb-2 flex items-center justify-between group/list-header">
               <p className="text-[10px] font-bold uppercase tracking-widest text-on-variant/50">My Lists</p>
-              <button 
-                onClick={() => setIsCategoryModalOpen(true)}
-                className="p-1 hover:bg-gray-100 rounded-md transition-colors opacity-40 group-hover/list-header:opacity-100 text-on-variant" 
-                title="Create New List"
-              >
-                <Plus size={14} />
-              </button>
+              {user && (
+                <button
+                  onClick={() => setIsCategoryModalOpen(true)}
+                  className="p-1 hover:bg-gray-100 rounded-md transition-colors opacity-40 group-hover/list-header:opacity-100 text-on-variant"
+                  title="Create New List"
+                >
+                  <Plus size={14} />
+                </button>
+              )}
             </div>
-            
+
             {categories.map(cat => (
-              <div 
+              <div
                 key={cat.id}
                 onClick={() => setActiveTab(cat.id)}
                 className={`google-sidebar-item ${activeTab === cat.id ? 'active' : ''}`}
               >
-                <div 
-                  className="w-2 h-2 rounded-full" 
-                  style={{ backgroundColor: cat.color }} 
+                <div
+                  className="w-2 h-2 rounded-full"
+                  style={{ backgroundColor: cat.color }}
                 />
-                <span className="flex-1">{cat.label}</span>
+                <span className="flex-1 truncate">{cat.label}</span>
+                {cat.ownerUid && cat.ownerUid !== user.uid && (
+                  <Lock size={12} className="text-on-variant/30" title="Shared List" />
+                )}
                 <span className="text-[10px] opacity-50 bg-gray-100 px-1.5 py-0.5 rounded-full">
                   {tasks.filter(t => t.category === cat.id && !t.completed).length}
                 </span>
@@ -274,8 +491,8 @@ const App = () => {
                 </div>
               )}
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{user.displayName}</p>
-                <button 
+                <p className="text-sm font-medium truncate">{user.displayName || user.email}</p>
+                <button
                   onClick={handleSignOut}
                   className="text-[10px] text-google-red font-bold uppercase tracking-wider hover:underline"
                 >
@@ -289,7 +506,7 @@ const App = () => {
               <div className="px-2">
                 <p className="text-sm font-semibold text-on-surface">Welcome to Tasks</p>
               </div>
-              <button 
+              <button
                 onClick={handleSignIn}
                 className="w-full flex items-center justify-center gap-3 bg-white border border-gray-200 py-3.5 rounded-2xl text-sm font-semibold hover:bg-gray-50 hover:border-google-blue/30 hover:shadow-lg hover:shadow-blue-50/50 transition-all active:scale-[0.98] group relative overflow-hidden cursor-pointer"
               >
@@ -307,7 +524,7 @@ const App = () => {
         {/* Header */}
         <header className="h-20 flex items-center px-8 border-b border-gray-50 justify-between">
           <div className="flex items-center gap-6">
-            <button 
+            <button
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
               className="p-2.5 hover:bg-gray-100 rounded-full transition-colors text-on-variant"
             >
@@ -317,13 +534,13 @@ const App = () => {
               {sidebarItems.find(i => i.id === activeTab)?.label || categories.find(c => c.id === activeTab)?.label}
             </h2>
           </div>
-          
+
           <div className="flex-1 max-w-2xl mx-12">
             <div className="relative group">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-on-variant/50 group-focus-within:text-google-blue transition-colors">
                 <Search size={20} />
               </div>
-              <input 
+              <input
                 type="text"
                 placeholder="Search tasks..."
                 value={searchQuery}
@@ -332,7 +549,7 @@ const App = () => {
               />
             </div>
           </div>
-          
+
           <div className="flex items-center gap-4">
             <div className="hidden md:flex bg-gray-50 rounded-full px-4 py-2 text-sm text-on-variant">
               {tasks.filter(t => !t.completed).length} pending tasks
@@ -361,35 +578,34 @@ const App = () => {
               ) : (
                 <div className="space-y-1">
                   {filteredTasks.map(task => (
-                    <div 
-                      key={task.id} 
+                    <div
+                      key={task.id}
                       onClick={() => openEditModal(task)}
                       className="group flex items-start gap-5 p-5 hover:bg-gray-50 rounded-2xl transition-all cursor-pointer border-b border-gray-50/50"
                     >
-                      <button 
+                      <button
                         onClick={(e) => { e.stopPropagation(); toggleTask(task); }}
                         className={`mt-1 transition-transform active:scale-90 ${task.completed ? 'text-google-blue' : 'text-on-variant'}`}
                       >
                         {task.completed ? <CheckCircle2 size={26} /> : <Circle size={26} strokeWidth={1.5} />}
                       </button>
-                      
+
                       <div className="flex-1 pt-0.5">
-                        {(() => {
-                          const todayStr = new Date().toISOString().split('T')[0];
-                          const isOverdue = task.dueDate && !task.completed && task.dueDate < todayStr;
-                          return (
-                            <p className={`text-lg transition-all ${
-                              task.completed ? 'line-through text-on-variant/50' : 
-                              isOverdue ? 'text-google-red font-medium' : 'text-on-surface'
-                            }`}>
-                              {task.title}
-                            </p>
-                          );
-                        })()}
+                        <div className="flex items-center gap-2">
+                          <p className={`text-lg transition-all ${task.completed ? 'line-through text-on-variant/50' : 'text-on-surface'}`}>
+                            {task.title}
+                          </p>
+                          {task.userId !== user.uid && (
+                            <span className="flex items-center gap-1 text-[10px] bg-gray-100 text-on-variant/40 px-1.5 py-0.5 rounded-md font-bold uppercase tracking-tighter">
+                              <Lock size={10} />
+                              {task.ownerName ? `Shared by ${task.ownerName.split('@')[0]}` : 'Shared'}
+                            </span>
+                          )}
+                        </div>
                         <div className="flex flex-wrap gap-2 mt-1.5 items-center">
                           {task.category && (
                             <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider text-white`}
-                            style={{ backgroundColor: categories.find(c => c.id === task.category)?.color || '#4285F4' }}>
+                              style={{ backgroundColor: categories.find(c => c.id === task.category)?.color || '#4285F4' }}>
                               {categories.find(c => c.id === task.category)?.label || task.category}
                             </span>
                           )}
@@ -416,7 +632,7 @@ const App = () => {
                             <span>{new Date(task.dueDate).toLocaleDateString()}</span>
                           </div>
                         )}
-                        
+
                         {/* Owner Indicator */}
                         {task.ownerName && (
                           <div className="mt-3 flex items-center gap-2 opacity-50">
@@ -429,15 +645,14 @@ const App = () => {
                       </div>
 
                       <div className="flex items-center gap-1">
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); toggleStar(task.id, task.starred, task.userId); }}
-                          disabled={!user || task.userId !== user.uid}
-                          className={`p-2 rounded-full transition-colors ${task.starred ? 'text-yellow-500' : 'text-on-variant opacity-0 group-hover:opacity-100'} ${(!user || task.userId !== user.uid) ? 'cursor-default' : 'hover:bg-gray-200'}`}
+                        <button
+                          onClick={(e) => toggleStar(e, task)}
+                          className={`p-2 rounded-full transition-colors ${task.starred ? 'text-yellow-500' : 'text-on-variant opacity-0 group-hover:opacity-100'} hover:bg-gray-200`}
                         >
                           <Star size={20} fill={task.starred ? 'currentColor' : 'none'} />
                         </button>
                         {user && task.userId === user.uid && (
-                          <button 
+                          <button
                             onClick={(e) => { e.stopPropagation(); deleteTask(task.id, task.userId); }}
                             className="p-2 text-on-variant hover:text-google-red hover:bg-red-50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                           >
@@ -454,29 +669,34 @@ const App = () => {
         </div>
 
         {/* FAB */}
-        {user && (
-          <button 
-            onClick={() => { setEditingTask(null); setIsModalOpen(true); }}
-            className="absolute bottom-10 right-10 w-16 h-16 bg-google-blue text-white rounded-[20px] shadow-2xl shadow-blue-200 flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-10 group"
-          >
-            <Plus size={36} className="group-hover:rotate-90 transition-transform duration-300" />
-          </button>
-        )}
+        <button
+          onClick={() => { setEditingTask(null); setIsModalOpen(true); }}
+          className="absolute bottom-10 right-10 w-16 h-16 bg-google-blue text-white rounded-[20px] shadow-2xl shadow-blue-200 flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-10 group"
+        >
+          <Plus size={36} className="group-hover:rotate-90 transition-transform duration-300" />
+        </button>
       </main>
 
-      <TaskModal 
-        isOpen={isModalOpen} 
-        onClose={() => { setIsModalOpen(false); setEditingTask(null); }} 
-        onSave={handleSaveTask} 
+      <TaskModal
+        isOpen={isModalOpen}
+        onClose={() => { setIsModalOpen(false); setEditingTask(null); }}
+        onSave={handleSaveTask}
         initialData={editingTask}
         categories={categories}
-        isReadOnly={editingTask?.userId ? editingTask.userId !== user?.uid : !user}
+        isReadOnly={editingTask && editingTask.userId !== user.uid}
       />
 
       <CategoryModal
         isOpen={isCategoryModalOpen}
         onClose={() => setIsCategoryModalOpen(false)}
         onSave={handleSaveCategory}
+      />
+
+      <StatusModal
+        isOpen={statusModal.isOpen}
+        title={statusModal.title}
+        message={statusModal.message}
+        onClose={() => setStatusModal({ ...statusModal, isOpen: false })}
       />
     </div>
   );

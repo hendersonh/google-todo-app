@@ -118,3 +118,29 @@ Implemented a Firestore-backed system for custom task lists, moving away from ha
 **Type:** feature  
 **Tags:** feature, firestore, ui  
 **Updated:** 4/26/2026
+
+
+## ui-status-modal-v1
+
+# UI Component: StatusModal (Premium Alerts)
+
+### Overview
+Replaces generic browser `alert()` calls with a premium, Material-styled modal for permission errors and status updates.
+
+### Features
+- **Visuals**: Centered overlay, subtle animations, Google-blue action buttons.
+- **Contextual Icons**: Uses `Lock`, `AlertCircle`, etc., to provide visual cues for the error type.
+- **Usage**: Used primarily for "Access Restricted" messages when a user attempts to modify a task owned by someone else.
+
+### File
+`src/components/StatusModal.jsx`
+
+### Pattern
+Controlled by a `statusModal` state object in `App.jsx`:
+```javascript
+const [statusModal, setStatusModal] = useState({ isOpen: false, title: '', message: '' });
+```
+
+**Type:** feature  
+**Tags:** ui-design, component, premium-ux  
+**Updated:** 4/26/2026

@@ -1,9 +1,9 @@
-import { 
-  collection, 
-  addDoc, 
-  updateDoc, 
-  deleteDoc, 
-  doc, 
+import {
+  collection,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  doc,
   serverTimestamp,
   query,
   orderBy,
@@ -32,47 +32,65 @@ export const TaskService = {
   subscribeToCategories: (userId, callback) => {
     if (!userId) {
       callback([]); // Return empty for guests
-      return () => {};
+      return () => { };
     }
 
     const q = query(
       collection(db, CATEGORIES_COLLECTION),
-      where("ownerUid", "==", userId),
       orderBy("createdAt", "asc")
     );
 
-    return onSnapshot(q, (snapshot) => {
-      const categories = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      callback(categories);
+    return onSnapshot(q, {
+      next: (snapshot) => {
+        console.log("Categories snapshot received:", snapshot.size);
+        const categories = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        callback(categories);
+      },
+      error: (error) => {
+        console.error("Firestore Category Subscription Error:", error);
+        callback([]); // Return empty on error
+      }
     });
   },
 
   addCategory: async (categoryData) => {
     // Auto-assign a color if not provided
     const color = categoryData.color || GOOGLE_PALETTE[Math.floor(Math.random() * GOOGLE_PALETTE.length)];
-    
+
     const category = {
       label: categoryData.label,
       color: color,
       ownerUid: categoryData.ownerUid,
       createdAt: serverTimestamp(),
     };
-    
+
     return await addDoc(collection(db, CATEGORIES_COLLECTION), category);
   },
 
   // Create a listener for tasks
-  subscribeToTasks: (callback) => {
-    const q = query(collection(db, TASKS_COLLECTION), orderBy("createdAt", "desc"));
-    return onSnapshot(q, (snapshot) => {
-      const tasks = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      callback(tasks);
+  subscribeToTasks: (userId, callback) => {
+    // For now, let's show all tasks so legacy tasks (without userId) are visible
+    // We can add more granular filtering later
+    const q = query(
+      collection(db, TASKS_COLLECTION),
+      orderBy("createdAt", "desc")
+    );
+
+    return onSnapshot(q, {
+      next: (snapshot) => {
+        const tasks = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        callback(tasks);
+      },
+      error: (error) => {
+        console.error("Firestore Task Subscription Error:", error);
+        callback([]);
+      }
     });
   },
 
@@ -102,7 +120,7 @@ export const TaskService = {
     // Don't include the id in the update data
     const dataToUpdate = { ...updates };
     delete dataToUpdate.id;
-    
+
     // Ensure we don't overwrite serverTimestamp with a local one if it's already there
     if (dataToUpdate.createdAt && typeof dataToUpdate.createdAt.toDate !== 'function') {
       delete dataToUpdate.createdAt;

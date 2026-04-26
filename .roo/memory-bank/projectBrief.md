@@ -60,3 +60,30 @@ The application is a premium SPA built with Vite, React, and Firebase, designed 
 **Type:** architecture  
 **Tags:** architecture, overview, firebase  
 **Updated:** 4/26/2026
+
+
+## perm-shared-read-v1
+
+# Architecture: Shared-Read / Private-Write Permissions
+
+### Overview
+The application implements a "Community Task Board" feel where all authenticated users can see each other's tasks, but only the creator can modify or delete them.
+
+### Implementation Details
+- **Firestore Rules**: 
+  - `tasks`: `allow read: if isAuthenticated()`.
+  - `tasks`: `allow create, update, delete: if isOwner(resource.data.userId)`.
+- **Frontend Enforcement**:
+  - `TaskModal` receives an `isReadOnly` prop (`task.userId !== user.uid`).
+  - Read-only mode hides "Save" and "Delete" buttons and disables input fields.
+  - Quick actions (toggle completed, star) are guarded in `App.jsx` and trigger a `StatusModal` if the user is not the owner.
+- **Identity Display**:
+  - Shared tasks display a "Shared by [Email/Name]" badge.
+  - Uses `task.ownerName` field (synced from `user.displayName` or `user.email` at creation time).
+
+### Rationale
+Encourages collaboration and visibility while maintaining data integrity and security.
+
+**Type:** architecture  
+**Tags:** security, architecture, permissions, firestore  
+**Updated:** 4/26/2026

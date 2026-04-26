@@ -78,3 +78,88 @@ Follows the "Dynamic Categories" action items including Firestore subscription a
 **Type:** decision  
 **Tags:** architecture, ui-design, firestore  
 **Updated:** 4/26/2026
+
+
+## decision-plus-button-discoverability
+
+# Decision: Enhanced Button Discoverability (Plus Button)
+
+### Problem
+The "Add List" (+) button was originally only visible on hover (`opacity-0`), leading to confusion about how to create new categories.
+
+### Decision
+Change the default state of the button to be partially visible (`opacity-40`) at all times.
+- **Normal State**: `opacity-40`
+- **Hover/Header Hover**: `opacity-100`
+
+### Rationale
+This provides a visual "hint" that functionality exists in that area without cluttering the clean sidebar design. It balances Google's minimalist aesthetic with essential discoverability for core features.
+
+**Type:** decision  
+**Tags:** ux-improvement, ui-design, discoverability  
+**Updated:** 4/26/2026
+
+
+## decision-privacy-filtering-v1
+
+# Privacy and Security: Task Filtering
+Added strict privacy filtering for tasks and categories.
+- Tasks are now filtered by `userId` in `TaskService.subscribeToTasks`.
+- Categories are filtered by `ownerUid` in `TaskService.subscribeToCategories`.
+- Guest users (unauthenticated) see an empty task list and default categories only.
+- Custom list creation (+) is hidden for unauthenticated users.
+
+## Required Composite Indexes
+- `categories`: `ownerUid` (ASC), `createdAt` (ASC)
+- `tasks`: `userId` (ASC), `createdAt` (DESC)
+
+**Type:** decision  
+**Tags:** security, firestore, privacy  
+**Updated:** 4/26/2026
+
+
+## auth-auto-signup-v1
+
+# Decision: Seamless Auto-Signup Flow (Email/Password)
+
+### Context
+To simplify the user onboarding experience and avoid the clunky "Sign In" vs "Sign Up" toggle, a unified "Continue" flow was implemented for email/password authentication.
+
+### Decision
+- **Unified Action**: The UI provides a single email/password form and a "Continue" button.
+- **Logic Chain**: 
+  1. Attempt `signInWithEmailAndPassword`.
+  2. If the error code is `auth/user-not-found` or `auth/invalid-credential` (modern Firebase error), automatically attempt `createUserWithEmailAndPassword`.
+  3. Log the user in immediately upon creation.
+- **UI Fallback**: If sign-in/sign-up fails for other reasons (e.g., `auth/weak-password`), a standard error message is shown.
+
+### Rationale
+Reduces friction for new users who may not know if they have an account yet, while maintaining security. This "Just Works" approach aligns with premium UX principles.
+
+### File
+`src/App.jsx` - `handleEmailAuth` function.
+
+**Type:** decision  
+**Tags:** auth, ux, firebase, decision  
+**Updated:** 4/26/2026
+
+
+## privacy-categories-v1
+
+# Decision: Private Custom Categories (Lists)
+
+### Context
+Initially, categories were shared like tasks. This caused visual clutter as users saw dozens of lists they didn't create.
+
+### Decision
+- **Strict Privacy**: Custom categories (lists) are strictly private to the creator. 
+- **Implementation**: `TaskService.subscribeToCategories` filters by `where("ownerUid", "==", userId)`.
+- **Database Backup**: Firestore rules are also set to restrict read access for `categories` to the owner, ensuring data privacy even at the API level.
+- **Shared Tasks**: If a user views a shared task belonging to a category they don't own, the UI gracefully handles the missing category metadata (defaults to ID or raw label).
+
+### Rationale
+Ensures the sidebar remains relevant to the current user while allowing the global task board to function.
+
+**Type:** decision  
+**Tags:** privacy, security, categories, decision  
+**Updated:** 4/26/2026
