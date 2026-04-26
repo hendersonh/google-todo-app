@@ -93,3 +93,28 @@ Tasks that are past their `dueDate` and not yet `completed` are now visually hig
 **Type:** feature  
 **Tags:** feature, ui, overdue, ux  
 **Updated:** 4/25/2026
+
+
+## dynamic-categories-implementation
+
+# Dynamic Categories (Custom Lists)
+
+Implemented a Firestore-backed system for custom task lists, moving away from hardcoded categories.
+
+## Architecture
+- **Collection**: `categories`
+- **Fields**: `label` (string), `color` (hex), `ownerUid` (string), `createdAt` (timestamp)
+- **Syncing**: Real-time listener in `App.jsx` using `subscribeToCategories`.
+
+## Key Decisions
+- **Auto-Color Assignment**: To maintain a premium Google aesthetic, the app auto-assigns colors from a curated `GOOGLE_PALETTE` hex constant in `TaskService.js`. Users do not manually pick colors.
+- **State Management**: Categories are managed at the `App` level and passed as props to `TaskModal` and `CategoryModal`.
+- **Filtering**: Sidebar and main list views dynamically filter based on any category `id` found in the state, allowing for infinite list scalability.
+
+## Security
+- Firestore rules restrict read/write access to the `ownerUid`.
+- Tasks reference categories by ID, ensuring referential integrity in the UI.
+
+**Type:** feature  
+**Tags:** feature, firestore, ui  
+**Updated:** 4/26/2026

@@ -41,4 +41,41 @@
   .google-sidebar-item.active {
     @apply bg-blue-50 text-google-blue font-medium;
   }
+
+  /* Custom Scrollbar */
+  .google-scrollbar::-webkit-scrollbar {
+    width: 4px;
+  }
+  .google-scrollbar::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+  .google-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-gray-200 rounded-full hover:bg-gray-300 transition-colors;
+  }
+
+  /* Navigation Scroll Mask */
+  .nav-mask {
+    mask-image: linear-gradient(to bottom, transparent, black 20px, black calc(100% - 20px), transparent);
+  }
+
+  .animate-in {
+    animation-duration: 700ms;
+    animation-fill-mode: both;
+  }
+
+  .fade-in {
+    @keyframes fade-in {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    animation-name: fade-in;
+  }
+
+  .slide-in-from-bottom-4 {
+    @keyframes slide-in-from-bottom {
+      from { transform: translateY(1rem); }
+      to { transform: translateY(0); }
+    }
+    animation-name: slide-in-from-bottom;
+  }
 }

@@ -1,7 +1,7 @@
 import React from 'react';
 import { ChevronLeft, ChevronRight, Clock } from 'lucide-react';
 
-const TimelineView = ({ tasks }) => {
+const TimelineView = ({ tasks, onTaskClick }) => {
   const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const today = new Date();
   
@@ -42,7 +42,11 @@ const TimelineView = ({ tasks }) => {
                 
                 <div className="flex-1 p-3 space-y-2 overflow-y-auto">
                   {dayTasks.length > 0 ? dayTasks.map(task => (
-                    <div key={task.id} className="p-3 bg-white border border-gray-100 rounded-xl shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+                    <div 
+                      key={task.id} 
+                      onClick={() => onTaskClick?.(task)}
+                      className="p-3 bg-white border border-gray-100 rounded-xl shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                    >
                       <p className="text-sm font-medium line-clamp-2">{task.title}</p>
                       <div className="flex items-center gap-1 text-[10px] text-on-variant mt-2">
                         <Clock size={10} />

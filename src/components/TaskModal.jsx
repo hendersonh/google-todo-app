@@ -1,13 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { X, Calendar, Star, Tag, RotateCcw, Plus, CheckSquare, Square, Trash2 } from 'lucide-react';
 
-const CATEGORIES = [
-  { id: 'personal', label: 'Personal', color: 'bg-google-blue' },
-  { id: 'work', label: 'Work', color: 'bg-google-green' },
-  { id: 'urgent', label: 'Urgent', color: 'bg-google-red' },
-  { id: 'shopping', label: 'Shopping', color: 'bg-google-yellow' },
-];
-
 const RECURRENCE_OPTIONS = [
   { id: 'none', label: 'None' },
   { id: 'daily', label: 'Daily' },
@@ -15,7 +8,7 @@ const RECURRENCE_OPTIONS = [
   { id: 'monthly', label: 'Monthly' },
 ];
 
-const TaskModal = ({ isOpen, onClose, onSave, initialData }) => {
+const TaskModal = ({ isOpen, onClose, onSave, initialData, isReadOnly, categories = [] }) => {
   const [title, setTitle] = useState('');
   const [details, setDetails] = useState('');
   const [starred, setStarred] = useState(false);
@@ -50,6 +43,7 @@ const TaskModal = ({ isOpen, onClose, onSave, initialData }) => {
   if (!isOpen) return null;
 
   const addSubtask = () => {
+    if (isReadOnly) return;
     if (newSubtaskTitle.trim()) {
       const newSub = {
         id: Date.now().toString(),
@@ -69,15 +63,18 @@ const TaskModal = ({ isOpen, onClose, onSave, initialData }) => {
   };
 
   const toggleSubtask = (id) => {
+    if (isReadOnly) return;
     setSubtasks(subtasks.map(s => s.id === id ? { ...s, completed: !s.completed } : s));
   };
 
   const removeSubtask = (id) => {
+    if (isReadOnly) return;
     setSubtasks(subtasks.filter(s => s.id !== id));
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (isReadOnly) return;
     if (!title.trim()) return;
     onSave({ 
       ...initialData,
@@ -98,7 +95,12 @@ const TaskModal = ({ isOpen, onClose, onSave, initialData }) => {
         <form onSubmit={handleSubmit}>
           <div className="p-6 max-h-[80vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-medium">{initialData?.id ? 'Edit Task' : 'New Task'}</h3>
+              <div className="flex flex-col">
+                <h3 className="text-xl font-medium">{isReadOnly ? 'Task Details' : (initialData?.id ? 'Edit Task' : 'New Task')}</h3>
+                {isReadOnly && initialData?.ownerName && (
+                  <span className="text-[10px] text-google-blue font-bold uppercase tracking-wider">Owner: {initialData.ownerName}</span>
+                )}
+              </div>
               <button onClick={onClose} type="button" className="p-2 hover:bg-gray-100 rounded-full transition-colors">
                 <X size={20} />
               </button>
@@ -106,17 +108,19 @@ const TaskModal = ({ isOpen, onClose, onSave, initialData }) => {
 
             <div className="space-y-4">
               <input 
-                autoFocus
+                autoFocus={!isReadOnly}
+                readOnly={isReadOnly}
                 type="text" 
                 placeholder="What needs to be done?"
-                className="w-full text-lg border-none focus:ring-0 p-0 placeholder:text-gray-400 bg-transparent"
+                className={`w-full text-lg border-none focus:ring-0 p-0 placeholder:text-gray-400 bg-transparent ${isReadOnly ? 'cursor-default' : ''}`}
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
               />
               
               <textarea 
-                placeholder="Add details"
-                className="w-full text-sm border-none focus:ring-0 p-0 placeholder:text-gray-400 resize-none bg-transparent"
+                readOnly={isReadOnly}
+                placeholder={isReadOnly ? "" : "Add details"}
+                className={`w-full text-sm border-none focus:ring-0 p-0 placeholder:text-gray-400 resize-none bg-transparent ${isReadOnly ? 'cursor-default' : ''}`}
                 rows={2}
                 value={details}
                 onChange={(e) => setDetails(e.target.value)}
@@ -131,55 +135,61 @@ const TaskModal = ({ isOpen, onClose, onSave, initialData }) => {
                       <button 
                         type="button" 
                         onClick={() => toggleSubtask(sub.id)}
-                        className={`transition-colors ${sub.completed ? 'text-google-blue' : 'text-on-variant/40'}`}
+                        className={`transition-colors ${sub.completed ? 'text-google-blue' : 'text-on-variant/40'} ${isReadOnly ? 'cursor-default' : ''}`}
                       >
                         {sub.completed ? <CheckSquare size={18} /> : <Square size={18} />}
                       </button>
                       <span className={`text-sm flex-1 ${sub.completed ? 'line-through text-on-variant/50' : 'text-on-surface'}`}>
                         {sub.title}
                       </span>
-                      <button 
-                        type="button"
-                        onClick={() => removeSubtask(sub.id)}
-                        className="p-1 text-on-variant/30 hover:text-google-red opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <Trash2 size={14} />
-                      </button>
+                      {!isReadOnly && (
+                        <button 
+                          type="button"
+                          onClick={() => removeSubtask(sub.id)}
+                          className="p-1 text-on-variant/30 hover:text-google-red opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      )}
                     </div>
                   ))}
                 </div>
-                <div className="flex items-center gap-3 text-on-variant/50 focus-within:text-google-blue transition-colors">
-                  <button 
-                    type="button" 
-                    onClick={addSubtask}
-                    className="hover:bg-blue-50 p-1 rounded-full transition-colors"
-                  >
-                    <Plus size={18} />
-                  </button>
-                  <input 
-                    type="text"
-                    placeholder="Add sub-task"
-                    className="flex-1 text-sm border-none focus:ring-0 p-0 bg-transparent placeholder:text-gray-300"
-                    value={newSubtaskTitle}
-                    onChange={(e) => setNewSubtaskTitle(e.target.value)}
-                    onKeyDown={handleAddSubtaskKeyDown}
-                  />
-                </div>
+                {!isReadOnly && (
+                  <div className="flex items-center gap-3 text-on-variant/50 focus-within:text-google-blue transition-colors">
+                    <button 
+                      type="button" 
+                      onClick={addSubtask}
+                      className="hover:bg-blue-50 p-1 rounded-full transition-colors"
+                    >
+                      <Plus size={18} />
+                    </button>
+                    <input 
+                      type="text"
+                      placeholder="Add sub-task"
+                      className="flex-1 text-sm border-none focus:ring-0 p-0 bg-transparent placeholder:text-gray-300"
+                      value={newSubtaskTitle}
+                      onChange={(e) => setNewSubtaskTitle(e.target.value)}
+                      onKeyDown={handleAddSubtaskKeyDown}
+                    />
+                  </div>
+                )}
               </div>
 
               <div className="pt-4 border-t border-gray-100">
                 <p className="text-xs font-semibold text-on-variant uppercase tracking-wider mb-3">Category</p>
                 <div className="flex flex-wrap gap-2">
-                  {CATEGORIES.map((cat) => (
+                  {categories.map((cat) => (
                     <button
                       key={cat.id}
                       type="button"
+                      disabled={isReadOnly}
                       onClick={() => setCategory(cat.id)}
                       className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
                         category === cat.id 
-                          ? `${cat.color} text-white ring-2 ring-offset-2 ring-gray-100` 
+                          ? `text-white ring-2 ring-offset-2 ring-gray-100 shadow-md` 
                           : 'bg-gray-50 text-on-variant hover:bg-gray-100'
-                      }`}
+                      } ${isReadOnly ? 'cursor-default' : ''}`}
+                      style={category === cat.id ? { backgroundColor: cat.color } : {}}
                     >
                       {cat.label}
                     </button>
@@ -190,8 +200,9 @@ const TaskModal = ({ isOpen, onClose, onSave, initialData }) => {
               <div className="flex flex-wrap items-center gap-3 pt-4 border-t border-gray-100">
                 <button 
                   type="button"
+                  disabled={isReadOnly}
                   onClick={() => setStarred(!starred)}
-                  className={`p-2 rounded-lg flex items-center gap-2 text-sm transition-colors ${starred ? 'bg-yellow-50 text-yellow-600' : 'hover:bg-gray-50 text-on-variant'}`}
+                  className={`p-2 rounded-lg flex items-center gap-2 text-sm transition-colors ${starred ? 'bg-yellow-50 text-yellow-600' : 'hover:bg-gray-50 text-on-variant'} ${isReadOnly ? 'cursor-default' : ''}`}
                 >
                   <Star size={18} fill={starred ? 'currentColor' : 'none'} />
                   <span>Important</span>
@@ -200,27 +211,31 @@ const TaskModal = ({ isOpen, onClose, onSave, initialData }) => {
                 <div className="relative">
                   <button 
                     type="button" 
+                    disabled={isReadOnly}
                     onClick={() => dateInputRef.current?.showPicker?.() || dateInputRef.current?.click()}
-                    className={`p-2 rounded-lg flex items-center gap-2 text-sm transition-colors ${dueDate ? 'bg-blue-50 text-google-blue' : 'hover:bg-gray-50 text-on-variant'}`}
+                    className={`p-2 rounded-lg flex items-center gap-2 text-sm transition-colors ${dueDate ? 'bg-blue-50 text-google-blue' : 'hover:bg-gray-50 text-on-variant'} ${isReadOnly ? 'cursor-default' : ''}`}
                   >
                     <Calendar size={18} />
                     <span>{dueDate ? new Date(dueDate).toLocaleDateString() : 'Add date'}</span>
                   </button>
-                  <input 
-                    ref={dateInputRef}
-                    type="date" 
-                    className="absolute inset-0 opacity-0 cursor-pointer pointer-events-none"
-                    value={dueDate}
-                    onChange={(e) => setDueDate(e.target.value)}
-                  />
+                  {!isReadOnly && (
+                    <input 
+                      ref={dateInputRef}
+                      type="date" 
+                      className="absolute inset-0 opacity-0 cursor-pointer pointer-events-none"
+                      value={dueDate}
+                      onChange={(e) => setDueDate(e.target.value)}
+                    />
+                  )}
                 </div>
 
                 <div className="flex items-center gap-2">
                   <RotateCcw size={18} className="text-on-variant" />
                   <select 
+                    disabled={isReadOnly}
                     value={recurrence}
                     onChange={(e) => setRecurrence(e.target.value)}
-                    className="bg-transparent border-none text-sm text-on-variant focus:ring-0 p-0 cursor-pointer hover:text-google-blue transition-colors"
+                    className={`bg-transparent border-none text-sm text-on-variant focus:ring-0 p-0 cursor-pointer hover:text-google-blue transition-colors ${isReadOnly ? 'cursor-default' : ''}`}
                   >
                     {RECURRENCE_OPTIONS.map(opt => (
                       <option key={opt.id} value={opt.id}>{opt.label}</option>
@@ -237,15 +252,17 @@ const TaskModal = ({ isOpen, onClose, onSave, initialData }) => {
               onClick={onClose}
               className="px-4 py-2 text-sm font-medium text-on-variant hover:bg-gray-200 rounded-lg transition-colors"
             >
-              Cancel
+              {isReadOnly ? 'Close' : 'Cancel'}
             </button>
-            <button 
-              type="submit"
-              disabled={!title.trim()}
-              className="px-6 py-2 bg-google-blue text-white text-sm font-medium rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm transition-all"
-            >
-              {initialData?.id ? 'Update' : 'Save'}
-            </button>
+            {!isReadOnly && (
+              <button 
+                type="submit"
+                disabled={!title.trim()}
+                className="px-6 py-2 bg-google-blue text-white text-sm font-medium rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm transition-all"
+              >
+                {initialData?.id ? 'Update' : 'Save'}
+              </button>
+            )}
           </div>
         </form>
       </div>

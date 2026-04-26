@@ -7,13 +7,63 @@ import {
   serverTimestamp,
   query,
   orderBy,
+  where,
   onSnapshot
 } from "firebase/firestore";
 import { db } from "../firebase";
 
 const TASKS_COLLECTION = "tasks";
+const CATEGORIES_COLLECTION = "categories";
+
+// Curated Google-inspired palette for auto-assignment
+const GOOGLE_PALETTE = [
+  "#4285F4", // Google Blue
+  "#34A853", // Google Green
+  "#EA4335", // Google Red
+  "#FBBC05", // Google Yellow
+  "#A142F4", // Purple
+  "#009688", // Teal
+  "#FF6D00", // Orange
+  "#607D8B", // Blue Grey
+];
 
 export const TaskService = {
+  // Category Methods
+  subscribeToCategories: (userId, callback) => {
+    if (!userId) {
+      callback([]); // Return empty for guests
+      return () => {};
+    }
+
+    const q = query(
+      collection(db, CATEGORIES_COLLECTION),
+      where("ownerUid", "==", userId),
+      orderBy("createdAt", "asc")
+    );
+
+    return onSnapshot(q, (snapshot) => {
+      const categories = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      callback(categories);
+    });
+  },
+
+  addCategory: async (categoryData) => {
+    // Auto-assign a color if not provided
+    const color = categoryData.color || GOOGLE_PALETTE[Math.floor(Math.random() * GOOGLE_PALETTE.length)];
+    
+    const category = {
+      label: categoryData.label,
+      color: color,
+      ownerUid: categoryData.ownerUid,
+      createdAt: serverTimestamp(),
+    };
+    
+    return await addDoc(collection(db, CATEGORIES_COLLECTION), category);
+  },
+
   // Create a listener for tasks
   subscribeToTasks: (callback) => {
     const q = query(collection(db, TASKS_COLLECTION), orderBy("createdAt", "desc"));
@@ -36,6 +86,8 @@ export const TaskService = {
       category: taskData.category || "personal",
       recurrence: taskData.recurrence || "none",
       subtasks: taskData.subtasks || [],
+      userId: taskData.userId, // Required for security rules
+      ownerName: taskData.ownerName || "Anonymous",
       createdAt: serverTimestamp(),
       ...taskData
     };
