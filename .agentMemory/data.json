@@ -3,13 +3,13 @@
     [
       "google-todo-app:_index_google-todo-app",
       {
-        "value": "{\"value\":[\"persistence-v1\",\"categorization-v1\",\"search-v1\",\"insights-v1\",\"mcp-config-v1\",\"recurring-tasks-plan-v1\",\"subtasks-plan-v1\",\"skill-index-v1\"],\"expires\":null}"
+        "value": "{\"value\":[\"persistence-v1\",\"categorization-v1\",\"search-v1\",\"insights-v1\",\"mcp-config-v1\",\"recurring-tasks-plan-v1\",\"subtasks-plan-v1\",\"skill-index-v1\",\"mb-preference-v1\",\"firestore-migration-v1\",\"firestore_config\",\"firestore_schema_tasks\",\"timeline-view-v1\",\"list-visuals-v1\",\"overdue-highlight-v1\"],\"expires\":null}"
       }
     ],
     [
       "google-todo-app:persistence-v1",
       {
-        "value": "{\"value\":{\"key\":\"persistence-v1\",\"type\":\"decision\",\"content\":\"Implemented a Single Source of Truth persistence layer. State is initialized directly from localStorage. A useEffect hook watches the tasks state and persists changes instantly. Added a window storage event listener to synchronize tasks across multiple browser tabs.\",\"tags\":[\"persistence\",\"localStorage\",\"sync\",\"architecture\"],\"metadata\":{\"importance\":\"critical\",\"file\":\"App.jsx\",\"accessCount\":0},\"createdAt\":1777139766714,\"updatedAt\":1777139766714},\"expires\":null}"
+        "value": "{\"value\":{\"key\":\"persistence-v1\",\"type\":\"decision\",\"content\":\"# Architecture: Firestore Persistence (Implemented)\\nThe application has fully migrated from `localStorage` to Google Cloud Firestore.\\n- **Service**: `src/services/TaskService.js`\\n- **Sync**: Uses `onSnapshot` for real-time, multi-tab synchronization.\\n- **Lifecycle**: State is managed as a real-time stream in `App.jsx`, removing the need for manual storage listeners.\\n- **Config**: Defined in `src/firebase.js`.\",\"tags\":[\"persistence\",\"firestore\",\"sync\",\"architecture\"],\"metadata\":{\"importance\":\"critical\",\"file\":\"App.jsx\",\"accessCount\":0},\"createdAt\":1777139766714,\"updatedAt\":1777165458741,\"relationships\":{}},\"expires\":null}"
       }
     ],
     [
@@ -51,7 +51,49 @@
     [
       "google-todo-app:skill-index-v1",
       {
-        "value": "{\"value\":{\"id\":\"4f307d71-8109-4f3e-ba4a-975174e52fd2\",\"projectId\":\"google-todo-app\",\"key\":\"skill-index-v1\",\"type\":\"pattern\",\"content\":\"# Active Skills Index - google-todo-app\\nA list of skills currently utilized and preferred for this project.\\n- **agent-memory-mcp**: Used for project-wide indexing and fast context recall.\\n- **kaizen**: The primary framework for brainstorming and continuous feature improvement.\\n- **concise-planning**: Used for creating atomic implementation plans for new features.\\n- **git-pushing**: Managed workflow for conventional commits and remote synchronization.\\n- **frontend-design**: Used for Google/Material-inspired UI and aesthetics.\\n- **systematic-debugging**: Used for diagnosing and fixing complex state/persistence issues.\\n\",\"tags\":[\"meta\",\"skills\",\"index\"],\"relationships\":{},\"metadata\":{\"accessCount\":0,\"createdBy\":\"agent\"},\"createdAt\":1777143143543,\"updatedAt\":1777143143543},\"expires\":null}"
+        "value": "{\"value\":{\"id\":\"4f307d71-8109-4f3e-ba4a-975174e52fd2\",\"projectId\":\"google-todo-app\",\"key\":\"skill-index-v1\",\"type\":\"pattern\",\"content\":\"# Active Skills Index - google-todo-app\\nA list of skills currently utilized and preferred for this project.\\n- **agent-memory-mcp**: Used for project-wide indexing and fast context recall.\\n- **kaizen**: The primary framework for brainstorming and continuous feature improvement.\\n- **concise-planning**: Used for creating atomic implementation plans for new features.\\n- **git-pushing**: Managed workflow for conventional commits and remote synchronization.\\n- **frontend-design**: Used for Google/Material-inspired UI and aesthetics.\\n- **systematic-debugging**: Used for diagnosing and fixing complex state/persistence issues.\\n- **firestore-integration**: (Planned) Used for Google Cloud Firestore synchronization and real-time backend logic.\\n\",\"tags\":[\"meta\",\"skills\",\"index\"],\"relationships\":{},\"metadata\":{\"accessCount\":0,\"createdBy\":\"agent\"},\"createdAt\":1777143143543,\"updatedAt\":1777145720390},\"expires\":null}"
+      }
+    ],
+    [
+      "google-todo-app:mb-preference-v1",
+      {
+        "value": "{\"value\":{\"id\":\"41f3c3e0-46b9-48ac-a664-4cf8f12d5ecf\",\"projectId\":\"google-todo-app\",\"key\":\"mb-preference-v1\",\"type\":\"decision\",\"content\":\"'MB' is the user's preferred shorthand for the Agent Memory Bank (agent-memory-mcp). Use this abbreviation for indexing, searching, and recall when the user refers to 'MB'.\",\"tags\":[\"preference\",\"shorthand\",\"ui\"],\"relationships\":{},\"metadata\":{\"accessCount\":0,\"createdBy\":\"agent\"},\"createdAt\":1777143463310,\"updatedAt\":1777143463310},\"expires\":null}"
+      }
+    ],
+    [
+      "google-todo-app:firestore-migration-v1",
+      {
+        "value": "{\"value\":{\"id\":\"8aecb4e1-603f-41d9-9fd4-4c8fa03edf5b\",\"projectId\":\"google-todo-app\",\"key\":\"firestore-migration-v1\",\"type\":\"feature\",\"content\":\"# Implementation Plan: Firestore Migration\\nMigrate data layer from localStorage to Google Cloud Firestore.\\n## Approach\\nRefactor TaskService to use Firebase JS SDK (v10+). Implement real-time synchronization via Firestore onSnapshot.\\n## Key Tasks\\n1. Firebase SDK installation.\\n2. Initialize Firebase in src/firebase.js.\\n3. Refactor TaskService for Firestore CRUD.\\n4. Replace storage listener in App.jsx with onSnapshot.\\n5. Migrate existing localStorage data to Firestore.\\n\",\"tags\":[\"plan\",\"firestore\",\"migration\",\"database\"],\"relationships\":{},\"metadata\":{\"accessCount\":0,\"createdBy\":\"agent\"},\"createdAt\":1777145578870,\"updatedAt\":1777145578870},\"expires\":null}"
+      }
+    ],
+    [
+      "google-todo-app:firestore_config",
+      {
+        "value": "{\"value\":{\"id\":\"fd9901ea-9277-46cd-9e2b-9bf35463d57b\",\"projectId\":\"google-todo-app\",\"key\":\"firestore_config\",\"type\":\"api\",\"content\":\"# Firestore Configuration\\nThe project uses Firebase/Firestore for data persistence.\\n\\n## Configuration Details\\n- **Project ID**: `todolist-c6c81`\\n- **Auth Domain**: `todolist-c6c81.firebaseapp.com`\\n- **Storage Bucket**: `todolist-c6c81.firebasestorage.app`\\n- **API Key**: `AIzaSyC8-TmagjO-yarfdk0q-Qf_gM5_rJILzDc`\\n- **Messaging Sender ID**: `526793244888`\\n- **App ID**: `1:526793244888:web:086a92868fd80c479157ad`\\n\\n## Usage\\nThe configuration is used in `src/firebase.js` (or similar) and was tested in `scratch/test-firestore.js`.\\nThe `TaskService.js` uses these settings to interact with the `tasks` collection.\",\"tags\":[\"firebase\",\"firestore\",\"config\"],\"relationships\":{\"dependsOn\":[],\"implements\":[]},\"metadata\":{\"accessCount\":0,\"createdBy\":\"agent\"},\"createdAt\":1777163060166,\"updatedAt\":1777163060166},\"expires\":null}"
+      }
+    ],
+    [
+      "google-todo-app:firestore_schema_tasks",
+      {
+        "value": "{\"value\":{\"id\":\"262c76fd-6f41-43ea-95e6-c776163ec220\",\"projectId\":\"google-todo-app\",\"key\":\"firestore_schema_tasks\",\"type\":\"architecture\",\"content\":\"# Firestore Data Schema - tasks collection\\nThe main collection used in the application is `tasks`.\\n\\n## Document Structure\\n| Field | Type | Description |\\n|-------|------|-------------|\\n| `title` | string | The title of the task |\\n| `details` | string | Detailed description |\\n| `completed` | boolean | Completion status |\\n| `starred` | boolean | Priority/starred status |\\n| `category` | string | e.g., 'personal', 'work' |\\n| `recurrence` | string | 'none', 'daily', 'weekly', 'monthly' |\\n| `subtasks` | array | Array of objects: `{ id, text, completed }` |\\n| `createdAt` | timestamp | Server timestamp |\\n| `dueDate` | string | YYYY-MM-DD format (used for recurrence calculation) |\\n\\n## Implementation Details\\n- Managed by `TaskService.js`.\\n- Uses `onSnapshot` for real-time updates.\\n- Recurrence logic is handled client-side before adding the next instance.\",\"tags\":[\"firestore\",\"schema\",\"tasks\"],\"relationships\":{\"firestore_config\":\"Uses the configuration for access\"},\"metadata\":{\"accessCount\":0,\"createdBy\":\"agent\"},\"createdAt\":1777163063791,\"updatedAt\":1777163063791},\"expires\":null}"
+      }
+    ],
+    [
+      "google-todo-app:timeline-view-v1",
+      {
+        "value": "{\"value\":{\"id\":\"e8e381ff-6004-431a-8e4b-379da87a8763\",\"projectId\":\"google-todo-app\",\"key\":\"timeline-view-v1\",\"type\":\"feature\",\"content\":\"# Feature: Timeline View\\nA new navigation tab (\\\"Schedule\\\") has been added that renders a 7-day horizontal timeline.\\n- **Component**: `src/components/TimelineView.jsx`\\n- **Logic**: Filters tasks by `dueDate` and organizes them into daily columns.\\n- **Integration**: Accessed via the sidebar; replaces the main list view when the 'schedule' tab is active.\",\"tags\":[\"feature\",\"timeline\",\"navigation\",\"ui\"],\"relationships\":{},\"metadata\":{\"accessCount\":0,\"createdBy\":\"agent\"},\"createdAt\":1777165457761,\"updatedAt\":1777165457761},\"expires\":null}"
+      }
+    ],
+    [
+      "google-todo-app:list-visuals-v1",
+      {
+        "value": "{\"value\":{\"id\":\"882752fb-0ef9-43f0-8a45-b50cdc61175e\",\"projectId\":\"google-todo-app\",\"key\":\"list-visuals-v1\",\"type\":\"feature\",\"content\":\"# Feature: Sub-tasks & Recurrence Visualization\\nEnhanced the main task list with granular progress and status indicators.\\n- **Sub-tasks**: Displays \\\"X/Y\\\" progress indicator in the task row when sub-tasks are present.\\n- **Recurrence**: Shows a \\\"RotateCcw\\\" icon and recurrence interval (e.g., 'daily') for repeating tasks.\\n- **UI**: Implemented in the main task list mapping within `App.jsx`.\",\"tags\":[\"feature\",\"ui\",\"subtasks\",\"recurrence\"],\"relationships\":{},\"metadata\":{\"accessCount\":0,\"createdBy\":\"agent\"},\"createdAt\":1777165458761,\"updatedAt\":1777165458761},\"expires\":null}"
+      }
+    ],
+    [
+      "google-todo-app:overdue-highlight-v1",
+      {
+        "value": "{\"value\":{\"id\":\"d1dd00e4-dfa9-4fee-aae0-c57f89b3b621\",\"projectId\":\"google-todo-app\",\"key\":\"overdue-highlight-v1\",\"type\":\"feature\",\"content\":\"# Feature: Overdue Task Highlighting\\nTasks that are past their `dueDate` and not yet `completed` are now visually highlighted.\\n- **Visual**: The task title text color changes to `google-red` (#EA4335).\\n- **Implementation**: Added conditional logic in `App.jsx` using a string comparison between `task.dueDate` (YYYY-MM-DD) and the current local date (`new Date().toISOString().split('T')[0]`).\\n- **Styles**: Utilizes the `text-google-red` and `font-medium` Tailwind/Vite classes.\",\"tags\":[\"feature\",\"ui\",\"overdue\",\"ux\"],\"relationships\":{},\"metadata\":{\"accessCount\":0,\"createdBy\":\"agent\"},\"createdAt\":1777168032370,\"updatedAt\":1777168032370},\"expires\":null}"
       }
     ]
   ],

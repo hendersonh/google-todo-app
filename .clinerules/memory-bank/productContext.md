@@ -35,3 +35,61 @@ Enable one-level nesting of tasks. Users can add a list of checklist items withi
 **Type:** feature  
 **Tags:** plan, subtasks, roadmap  
 **Updated:** 4/25/2026
+
+
+## firestore-migration-v1
+
+# Implementation Plan: Firestore Migration
+Migrate data layer from localStorage to Google Cloud Firestore.
+## Approach
+Refactor TaskService to use Firebase JS SDK (v10+). Implement real-time synchronization via Firestore onSnapshot.
+## Key Tasks
+1. Firebase SDK installation.
+2. Initialize Firebase in src/firebase.js.
+3. Refactor TaskService for Firestore CRUD.
+4. Replace storage listener in App.jsx with onSnapshot.
+5. Migrate existing localStorage data to Firestore.
+
+
+**Type:** feature  
+**Tags:** plan, firestore, migration, database  
+**Updated:** 4/25/2026
+
+
+## timeline-view-v1
+
+# Feature: Timeline View
+A new navigation tab ("Schedule") has been added that renders a 7-day horizontal timeline.
+- **Component**: `src/components/TimelineView.jsx`
+- **Logic**: Filters tasks by `dueDate` and organizes them into daily columns.
+- **Integration**: Accessed via the sidebar; replaces the main list view when the 'schedule' tab is active.
+
+**Type:** feature  
+**Tags:** feature, timeline, navigation, ui  
+**Updated:** 4/25/2026
+
+
+## list-visuals-v1
+
+# Feature: Sub-tasks & Recurrence Visualization
+Enhanced the main task list with granular progress and status indicators.
+- **Sub-tasks**: Displays "X/Y" progress indicator in the task row when sub-tasks are present.
+- **Recurrence**: Shows a "RotateCcw" icon and recurrence interval (e.g., 'daily') for repeating tasks.
+- **UI**: Implemented in the main task list mapping within `App.jsx`.
+
+**Type:** feature  
+**Tags:** feature, ui, subtasks, recurrence  
+**Updated:** 4/25/2026
+
+
+## overdue-highlight-v1
+
+# Feature: Overdue Task Highlighting
+Tasks that are past their `dueDate` and not yet `completed` are now visually highlighted.
+- **Visual**: The task title text color changes to `google-red` (#EA4335).
+- **Implementation**: Added conditional logic in `App.jsx` using a string comparison between `task.dueDate` (YYYY-MM-DD) and the current local date (`new Date().toISOString().split('T')[0]`).
+- **Styles**: Utilizes the `text-google-red` and `font-medium` Tailwind/Vite classes.
+
+**Type:** feature  
+**Tags:** feature, ui, overdue, ux  
+**Updated:** 4/25/2026

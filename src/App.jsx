@@ -22,64 +22,49 @@ import TimelineView from './components/TimelineView';
 import StatsDashboard from './components/StatsDashboard';
 
 const App = () => {
-  // Initialize state directly from LocalStorage (Single Source of Truth)
-  const [tasks, setTasks] = useState(() => TaskService.getTasks());
+  const [tasks, setTasks] = useState([]);
   const [activeTab, setActiveTab] = useState('all');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [loading, setLoading] = useState(true);
 
-  // Persist tasks whenever they change
+  // Subscribe to real-time Firestore updates
   useEffect(() => {
-    TaskService.saveTasks(tasks);
-  }, [tasks]);
-
-  // Sync between tabs (Multi-tab support)
-  useEffect(() => {
-    const handleStorage = (e) => {
-      if (e.key === 'google_todo_tasks') {
-        setTasks(TaskService.getTasks());
-      }
-    };
-    window.addEventListener('storage', handleStorage);
-    return () => window.removeEventListener('storage', handleStorage);
+    const unsubscribe = TaskService.subscribeToTasks((updatedTasks) => {
+      setTasks(updatedTasks);
+      setLoading(false);
+    });
+    return () => unsubscribe();
   }, []);
 
-  const toggleTask = (id) => {
-    setTasks(prev => {
-      const task = prev.find(t => t.id === id);
-      if (!task) return prev;
+  const toggleTask = async (task) => {
+    const isCompleting = !task.completed;
+    await TaskService.updateTask(task.id, { completed: isCompleting });
 
-      const isCompleting = !task.completed;
-      let newTasks = prev.map(t => t.id === id ? { ...t, completed: isCompleting } : t);
-
-      // Handle Recurrence
-      if (isCompleting && task.recurrence && task.recurrence !== 'none') {
-        const nextTask = TaskService.handleRecurrence(task);
-        if (nextTask) {
-          newTasks = [nextTask, ...newTasks];
-        }
+    // Handle Recurrence
+    if (isCompleting && task.recurrence && task.recurrence !== 'none') {
+      const nextTaskData = TaskService.handleRecurrence(task);
+      if (nextTaskData) {
+        await TaskService.addTask(nextTaskData);
       }
-
-      return newTasks;
-    });
+    }
   };
 
-  const toggleStar = (id) => {
-    setTasks(prev => prev.map(t => t.id === id ? { ...t, starred: !t.starred } : t));
+  const toggleStar = async (id, currentStarred) => {
+    await TaskService.updateTask(id, { starred: !currentStarred });
   };
 
-  const deleteTask = (id) => {
-    setTasks(prev => prev.filter(t => t.id !== id));
+  const deleteTask = async (id) => {
+    await TaskService.deleteTask(id);
   };
 
-  const handleSaveTask = (taskData) => {
+  const handleSaveTask = async (taskData) => {
     if (taskData.id) {
-      setTasks(prev => prev.map(t => t.id === taskData.id ? { ...t, ...taskData } : t));
+      await TaskService.updateTask(taskData.id, taskData);
     } else {
-      const newTask = TaskService.createTask(taskData);
-      setTasks(prev => [newTask, ...prev]);
+      await TaskService.addTask(taskData);
     }
     setEditingTask(null);
   };
@@ -214,7 +199,11 @@ const App = () => {
 
         {/* Content Area */}
         <div className="flex-1 overflow-y-auto bg-white flex flex-col">
-          {activeTab === 'schedule' ? (
+          {loading ? (
+            <div className="flex items-center justify-center h-[60vh]">
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-google-blue"></div>
+            </div>
+          ) : activeTab === 'schedule' ? (
             <TimelineView tasks={tasks} />
           ) : activeTab === 'insights' ? (
             <div className="max-w-4xl mx-auto w-full">
@@ -236,16 +225,25 @@ const App = () => {
                       className="group flex items-start gap-5 p-5 hover:bg-gray-50 rounded-2xl transition-all cursor-pointer border-b border-gray-50/50"
                     >
                       <button 
-                        onClick={(e) => { e.stopPropagation(); toggleTask(task.id); }}
+                        onClick={(e) => { e.stopPropagation(); toggleTask(task); }}
                         className={`mt-1 transition-transform active:scale-90 ${task.completed ? 'text-google-blue' : 'text-on-variant'}`}
                       >
                         {task.completed ? <CheckCircle2 size={26} /> : <Circle size={26} strokeWidth={1.5} />}
                       </button>
                       
                       <div className="flex-1 pt-0.5">
-                        <p className={`text-lg transition-all ${task.completed ? 'line-through text-on-variant/50' : 'text-on-surface'}`}>
-                          {task.title}
-                        </p>
+                        {(() => {
+                          const todayStr = new Date().toISOString().split('T')[0];
+                          const isOverdue = task.dueDate && !task.completed && task.dueDate < todayStr;
+                          return (
+                            <p className={`text-lg transition-all ${
+                              task.completed ? 'line-through text-on-variant/50' : 
+                              isOverdue ? 'text-google-red font-medium' : 'text-on-surface'
+                            }`}>
+                              {task.title}
+                            </p>
+                          );
+                        })()}
                         <div className="flex flex-wrap gap-2 mt-1.5 items-center">
                           {task.category && (
                             <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider text-white ${
@@ -284,7 +282,7 @@ const App = () => {
 
                       <div className="flex items-center gap-1">
                         <button 
-                          onClick={(e) => { e.stopPropagation(); toggleStar(task.id); }}
+                          onClick={(e) => { e.stopPropagation(); toggleStar(task.id, task.starred); }}
                           className={`p-2 rounded-full hover:bg-gray-200 transition-colors ${task.starred ? 'text-yellow-500' : 'text-on-variant opacity-0 group-hover:opacity-100'}`}
                         >
                           <Star size={20} fill={task.starred ? 'currentColor' : 'none'} />

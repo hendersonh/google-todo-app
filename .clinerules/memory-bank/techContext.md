@@ -5,3 +5,12 @@ Registered the agent-memory-mcp server in /home/ubuntu/.gemini/antigravity/mcp_c
 **Type:** decision  
 **Tags:** mcp, config, automation, setup  
 **Updated:** 4/25/2026
+
+
+## mb-preference-v1
+
+'MB' is the user's preferred shorthand for the Agent Memory Bank (agent-memory-mcp). Use this abbreviation for indexing, searching, and recall when the user refers to 'MB'.
+
+**Type:** decision  
+**Tags:** preference, shorthand, ui  
+**Updated:** 4/25/2026
