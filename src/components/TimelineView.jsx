@@ -1,4 +1,3 @@
-import React from 'react';
 import { ChevronLeft, ChevronRight, Clock } from 'lucide-react';
 
 const TimelineView = ({ tasks, onTaskClick }) => {

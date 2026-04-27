@@ -144,3 +144,24 @@ const [statusModal, setStatusModal] = useState({ isOpen: false, title: '', messa
 **Type:** feature  
 **Tags:** ui-design, component, premium-ux  
 **Updated:** 4/26/2026
+
+
+## feature-deletion-safety
+
+# Deletion Safety (Confirm Deletion Modal)
+
+### Description
+Implemented a "Poka-Yoke" (error-proofing) pattern to prevent accidental task deletion. 
+
+### Implementation Details
+- **Component**: `ConfirmDeletionModal.jsx`.
+- **Logic**: Users must type the word "yes" (case-insensitive) into an input field to enable the "Delete Forever" button.
+- **Context**: The modal displays the specific title of the task being deleted.
+- **Integration**: Triggered from `App.jsx`'s `deleteTask` function.
+
+### Rationale
+High-risk, irreversible actions should require intentional effort (Friction by Design). This prevents accidental clicks from causing data loss.
+
+**Type:** feature  
+**Tags:** feature, ux, safety, poka-yoke  
+**Updated:** 4/27/2026

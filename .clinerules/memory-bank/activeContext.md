@@ -71,3 +71,28 @@ Centralized in `filteredTasks` calculation within `App.jsx` and filtered queries
 **Type:** pattern  
 **Tags:** ux, filtering, pattern  
 **Updated:** 4/26/2026
+
+
+## pattern-readonly-erasable
+
+# Read-Only but Erasable Pattern
+
+### Pattern Description
+A hybrid state for completed tasks where data is protected from accidental edits but remains fully manageable.
+
+### Implementation Details
+- **Modal State**: When a task has `completed: true`, the `TaskModal` enters `effectiveReadOnly` mode.
+- **UI Elements**:
+    - **Locked Fields**: All inputs (Title, Details, Date, etc.) become read-only.
+    - **Status Badge**: A prominent "COMPLETED" badge is displayed.
+    - **Action Buttons**: Standard "Save" button is hidden. Replaced by "Re-open Task" (to restore to active) and "Delete" (to erase).
+- **Component**: `TaskModal.jsx`.
+
+### Benefits
+- **Data Integrity**: Prevents accidental changes to historical (completed) records.
+- **Workflow Efficiency**: Allows quick restoration or deletion without needing to "Edit" first.
+- **Clarity**: Clearly distinguishes between active planning and archived results.
+
+**Type:** pattern  
+**Tags:** pattern, ux, completed-tasks  
+**Updated:** 4/27/2026

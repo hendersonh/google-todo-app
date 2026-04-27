@@ -1,10 +1,8 @@
-import React from 'react';
 import { Target, TrendingUp, PieChart, CheckCircle2 } from 'lucide-react';
 
 const StatsDashboard = ({ tasks }) => {
   const total = tasks.length;
   const completed = tasks.filter(t => t.completed).length;
-  const pending = total - completed;
   const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0;
   
   const urgentCount = tasks.filter(t => t.category === 'urgent' && !t.completed).length;

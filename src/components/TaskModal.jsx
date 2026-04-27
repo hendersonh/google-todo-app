@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { X, Calendar, Star, Tag, RotateCcw, Plus, CheckSquare, Square, Trash2 } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { X, Calendar, Star, RotateCcw, Plus, CheckSquare, Square, Trash2 } from 'lucide-react';
 
 const RECURRENCE_OPTIONS = [
   { id: 'none', label: 'None' },
@@ -8,7 +8,9 @@ const RECURRENCE_OPTIONS = [
   { id: 'monthly', label: 'Monthly' },
 ];
 
-const TaskModal = ({ isOpen, onClose, onSave, initialData, isReadOnly, categories = [] }) => {
+const TaskModal = ({ isOpen, onClose, onSave, onDelete, onToggleComplete, initialData, isReadOnly, categories = [] }) => {
+  const isCompleted = initialData?.completed || false;
+  const effectiveReadOnly = isReadOnly || isCompleted;
   const [title, setTitle] = useState('');
   const [details, setDetails] = useState('');
   const [starred, setStarred] = useState(false);
@@ -96,7 +98,10 @@ const TaskModal = ({ isOpen, onClose, onSave, initialData, isReadOnly, categorie
           <div className="p-6 max-h-[80vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-6">
               <div className="flex flex-col">
-                <h3 className="text-xl font-medium">{isReadOnly ? 'Task Details' : (initialData?.id ? 'Edit Task' : 'New Task')}</h3>
+                <h3 className="text-xl font-medium">{effectiveReadOnly ? 'Task Details' : (initialData?.id ? 'Edit Task' : 'New Task')}</h3>
+                {isCompleted && (
+                  <span className="text-[10px] bg-google-blue/10 text-google-blue px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ml-2">Completed</span>
+                )}
                 {isReadOnly && initialData?.ownerName && (
                   <span className="text-[10px] text-google-blue font-bold uppercase tracking-wider">Owner: {initialData.ownerName}</span>
                 )}
@@ -108,19 +113,19 @@ const TaskModal = ({ isOpen, onClose, onSave, initialData, isReadOnly, categorie
 
             <div className="space-y-4">
               <input 
-                autoFocus={!isReadOnly}
-                readOnly={isReadOnly}
+                autoFocus={!effectiveReadOnly}
+                readOnly={effectiveReadOnly}
                 type="text" 
                 placeholder="What needs to be done?"
-                className={`w-full text-lg border-none focus:ring-0 p-0 placeholder:text-gray-400 bg-transparent ${isReadOnly ? 'cursor-default' : ''}`}
+                className={`w-full text-lg border-none focus:ring-0 p-0 placeholder:text-gray-400 bg-transparent ${effectiveReadOnly ? 'cursor-default' : ''}`}
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
               />
               
               <textarea 
-                readOnly={isReadOnly}
-                placeholder={isReadOnly ? "" : "Add details"}
-                className={`w-full text-sm border-none focus:ring-0 p-0 placeholder:text-gray-400 resize-none bg-transparent ${isReadOnly ? 'cursor-default' : ''}`}
+                readOnly={effectiveReadOnly}
+                placeholder={effectiveReadOnly ? "" : "Add details"}
+                className={`w-full text-sm border-none focus:ring-0 p-0 placeholder:text-gray-400 resize-none bg-transparent ${effectiveReadOnly ? 'cursor-default' : ''}`}
                 rows={2}
                 value={details}
                 onChange={(e) => setDetails(e.target.value)}
@@ -135,14 +140,14 @@ const TaskModal = ({ isOpen, onClose, onSave, initialData, isReadOnly, categorie
                       <button 
                         type="button" 
                         onClick={() => toggleSubtask(sub.id)}
-                        className={`transition-colors ${sub.completed ? 'text-google-blue' : 'text-on-variant/40'} ${isReadOnly ? 'cursor-default' : ''}`}
+                        className={`transition-colors ${sub.completed ? 'text-google-blue' : 'text-on-variant/40'} ${effectiveReadOnly ? 'cursor-default' : ''}`}
                       >
                         {sub.completed ? <CheckSquare size={18} /> : <Square size={18} />}
                       </button>
                       <span className={`text-sm flex-1 ${sub.completed ? 'line-through text-on-variant/50' : 'text-on-surface'}`}>
                         {sub.title}
                       </span>
-                      {!isReadOnly && (
+                      {!effectiveReadOnly && (
                         <button 
                           type="button"
                           onClick={() => removeSubtask(sub.id)}
@@ -154,7 +159,7 @@ const TaskModal = ({ isOpen, onClose, onSave, initialData, isReadOnly, categorie
                     </div>
                   ))}
                 </div>
-                {!isReadOnly && (
+                {!effectiveReadOnly && (
                   <div className="flex items-center gap-3 text-on-variant/50 focus-within:text-google-blue transition-colors">
                     <button 
                       type="button" 
@@ -182,13 +187,13 @@ const TaskModal = ({ isOpen, onClose, onSave, initialData, isReadOnly, categorie
                     <button
                       key={cat.id}
                       type="button"
-                      disabled={isReadOnly}
+                      disabled={effectiveReadOnly}
                       onClick={() => setCategory(cat.id)}
                       className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
                         category === cat.id 
                           ? `text-white ring-2 ring-offset-2 ring-gray-100 shadow-md` 
                           : 'bg-gray-50 text-on-variant hover:bg-gray-100'
-                      } ${isReadOnly ? 'cursor-default' : ''}`}
+                      } ${effectiveReadOnly ? 'cursor-default' : ''}`}
                       style={category === cat.id ? { backgroundColor: cat.color } : {}}
                     >
                       {cat.label}
@@ -200,9 +205,9 @@ const TaskModal = ({ isOpen, onClose, onSave, initialData, isReadOnly, categorie
               <div className="flex flex-wrap items-center gap-3 pt-4 border-t border-gray-100">
                 <button 
                   type="button"
-                  disabled={isReadOnly}
+                  disabled={effectiveReadOnly}
                   onClick={() => setStarred(!starred)}
-                  className={`p-2 rounded-lg flex items-center gap-2 text-sm transition-colors ${starred ? 'bg-yellow-50 text-yellow-600' : 'hover:bg-gray-50 text-on-variant'} ${isReadOnly ? 'cursor-default' : ''}`}
+                  className={`p-2 rounded-lg flex items-center gap-2 text-sm transition-colors ${starred ? 'bg-yellow-50 text-yellow-600' : 'hover:bg-gray-50 text-on-variant'} ${effectiveReadOnly ? 'cursor-default' : ''}`}
                 >
                   <Star size={18} fill={starred ? 'currentColor' : 'none'} />
                   <span>Important</span>
@@ -211,14 +216,14 @@ const TaskModal = ({ isOpen, onClose, onSave, initialData, isReadOnly, categorie
                 <div className="relative">
                   <button 
                     type="button" 
-                    disabled={isReadOnly}
+                    disabled={effectiveReadOnly}
                     onClick={() => dateInputRef.current?.showPicker?.() || dateInputRef.current?.click()}
-                    className={`p-2 rounded-lg flex items-center gap-2 text-sm transition-colors ${dueDate ? 'bg-blue-50 text-google-blue' : 'hover:bg-gray-50 text-on-variant'} ${isReadOnly ? 'cursor-default' : ''}`}
+                    className={`p-2 rounded-lg flex items-center gap-2 text-sm transition-colors ${dueDate ? 'bg-blue-50 text-google-blue' : 'hover:bg-gray-50 text-on-variant'} ${effectiveReadOnly ? 'cursor-default' : ''}`}
                   >
                     <Calendar size={18} />
                     <span>{dueDate ? new Date(dueDate).toLocaleDateString() : 'Add date'}</span>
                   </button>
-                  {!isReadOnly && (
+                  {!effectiveReadOnly && (
                     <input 
                       ref={dateInputRef}
                       type="date" 
@@ -232,10 +237,10 @@ const TaskModal = ({ isOpen, onClose, onSave, initialData, isReadOnly, categorie
                 <div className="flex items-center gap-2">
                   <RotateCcw size={18} className="text-on-variant" />
                   <select 
-                    disabled={isReadOnly}
+                    disabled={effectiveReadOnly}
                     value={recurrence}
                     onChange={(e) => setRecurrence(e.target.value)}
-                    className={`bg-transparent border-none text-sm text-on-variant focus:ring-0 p-0 cursor-pointer hover:text-google-blue transition-colors ${isReadOnly ? 'cursor-default' : ''}`}
+                    className={`bg-transparent border-none text-sm text-on-variant focus:ring-0 p-0 cursor-pointer hover:text-google-blue transition-colors ${effectiveReadOnly ? 'cursor-default' : ''}`}
                   >
                     {RECURRENCE_OPTIONS.map(opt => (
                       <option key={opt.id} value={opt.id}>{opt.label}</option>
@@ -246,23 +251,50 @@ const TaskModal = ({ isOpen, onClose, onSave, initialData, isReadOnly, categorie
             </div>
           </div>
 
-          <div className="p-4 bg-gray-50 flex justify-end gap-3">
-            <button 
-              type="button" 
-              onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-on-variant hover:bg-gray-200 rounded-lg transition-colors"
-            >
-              {isReadOnly ? 'Close' : 'Cancel'}
-            </button>
-            {!isReadOnly && (
+          <div className="p-4 bg-gray-50 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              {!isReadOnly && initialData?.id && (
+                <button 
+                  type="button" 
+                  onClick={() => { onDelete(initialData.id, initialData.title, initialData.userId); onClose(); }}
+                  className="p-2 text-on-variant hover:text-google-red hover:bg-red-50 rounded-lg transition-colors flex items-center gap-2 text-sm font-medium"
+                  title="Delete Task"
+                >
+                  <Trash2 size={18} />
+                  <span className="hidden sm:inline">Delete</span>
+                </button>
+              )}
+            </div>
+            
+            <div className="flex items-center gap-3">
               <button 
-                type="submit"
-                disabled={!title.trim()}
-                className="px-6 py-2 bg-google-blue text-white text-sm font-medium rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm transition-all"
+                type="button" 
+                onClick={onClose}
+                className="px-4 py-2 text-sm font-medium text-on-variant hover:bg-gray-200 rounded-lg transition-colors"
               >
-                {initialData?.id ? 'Update' : 'Save'}
+                {effectiveReadOnly ? 'Close' : 'Cancel'}
               </button>
-            )}
+              
+              {isCompleted && !isReadOnly && (
+                <button 
+                  type="button"
+                  onClick={() => { onToggleComplete(initialData); onClose(); }}
+                  className="px-6 py-2 bg-google-blue/10 text-google-blue text-sm font-bold rounded-lg hover:bg-google-blue/20 transition-all"
+                >
+                  Re-open Task
+                </button>
+              )}
+
+              {!effectiveReadOnly && (
+                <button 
+                  type="submit"
+                  disabled={!title.trim()}
+                  className="px-6 py-2 bg-google-blue text-white text-sm font-medium rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm transition-all"
+                >
+                  {initialData?.id ? 'Update' : 'Save'}
+                </button>
+              )}
+            </div>
           </div>
         </form>
       </div>

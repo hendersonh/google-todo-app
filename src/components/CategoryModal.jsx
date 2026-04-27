@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { X, Tag } from 'lucide-react';
 
 const CategoryModal = ({ isOpen, onClose, onSave }) => {

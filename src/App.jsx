@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Menu,
   Plus,
@@ -10,9 +10,7 @@ import {
   Trash2,
   Clock,
   MoreVertical,
-  ChevronRight,
   Search,
-  TrendingUp,
   BarChart3,
   RotateCcw,
   LogOut,
@@ -25,10 +23,10 @@ import CategoryModal from './components/CategoryModal';
 import TimelineView from './components/TimelineView';
 import StatsDashboard from './components/StatsDashboard';
 import StatusModal from './components/StatusModal';
+import ConfirmDeletionModal from './components/ConfirmDeletionModal';
 import { auth, googleProvider } from './firebase';
 import {
   signInWithPopup,
-  GoogleAuthProvider,
   onAuthStateChanged,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
@@ -55,7 +53,8 @@ const App = () => {
           { id: 'urgent', label: 'Urgent', color: '#EA4335' },
           { id: 'shopping', label: 'Shopping', color: '#FBBC05' },
         ];
-        setCategories([...defaults, ...dynamicCats]);
+        const uniqueDynamic = dynamicCats.filter(d => !defaults.some(def => def.id === d.id));
+        setCategories([...defaults, ...uniqueDynamic]);
       });
       return () => unsubscribe();
     } else {
@@ -71,8 +70,11 @@ const App = () => {
   const [editingTask, setEditingTask] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
+  const loadingRef = useRef(loading);
+  useEffect(() => { loadingRef.current = loading; }, [loading]);
   const [error, setError] = useState(null);
   const [authResolved, setAuthResolved] = useState(false);
+  const [deletionConfirm, setDeletionConfirm] = useState({ isOpen: false, taskId: null, taskTitle: '' });
 
   // ... rest of the state ...
 
@@ -105,7 +107,7 @@ const App = () => {
 
     // Safety timeout: If loading takes > 10s, something might be wrong
     const timeoutId = setTimeout(() => {
-      if (loading) {
+      if (loadingRef.current) {
         console.warn("Loading tasks timed out. Check network or Firestore indexes.");
         setLoading(false);
         setError("Sync is taking longer than expected. Please check your connection.");
@@ -123,7 +125,7 @@ const App = () => {
       unsubscribeTasks();
       clearTimeout(timeoutId);
     };
-  }, [user?.uid]);
+  }, [user]);
 
   const [authEmail, setAuthEmail] = useState('');
   const [authPassword, setAuthPassword] = useState('');
@@ -131,8 +133,7 @@ const App = () => {
 
   const handleSignIn = async () => {
     try {
-      const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
+      await signInWithPopup(auth, googleProvider);
     } catch (error) {
       console.error("Error signing in:", error);
       alert("Sign in failed. Please try again.");
@@ -222,9 +223,16 @@ const App = () => {
     }
   };
 
-  const deleteTask = async (id, userId) => {
+  const deleteTask = async (id, title, userId) => {
     if (!user || userId !== user.uid) return;
-    await TaskService.deleteTask(id);
+    setDeletionConfirm({ isOpen: true, taskId: id, taskTitle: title });
+  };
+
+  const confirmDelete = async () => {
+    if (deletionConfirm.taskId) {
+      await TaskService.deleteTask(deletionConfirm.taskId);
+      setDeletionConfirm({ isOpen: false, taskId: null, taskTitle: '' });
+    }
   };
 
   const handleSaveTask = async (taskData) => {
@@ -262,7 +270,7 @@ const App = () => {
 
   const filteredTasks = tasks.filter(task => {
     const matchesSearch =
-      task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (task.title && task.title.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (task.details && task.details.toLowerCase().includes(searchQuery.toLowerCase()));
 
     if (!matchesSearch) return false;
@@ -312,7 +320,7 @@ const App = () => {
             </div>
             <div className="space-y-2">
               <h1 className="text-5xl font-bold tracking-tight text-on-surface">Organize your life</h1>
-              <p className="text-xl text-on-variant font-light">Simplify your day with the world's most elegant todo app.</p>
+              <p className="text-xl text-on-variant font-light">Simplify your day with the world&apos;s most elegant todo app.</p>
             </div>
           </div>
 
@@ -592,7 +600,13 @@ const App = () => {
 
                       <div className="flex-1 pt-0.5">
                         <div className="flex items-center gap-2">
-                          <p className={`text-lg transition-all ${task.completed ? 'line-through text-on-variant/50' : 'text-on-surface'}`}>
+                          <p className={`text-lg transition-all ${
+                            task.completed 
+                              ? 'line-through text-on-variant/50' 
+                              : (task.dueDate && new Date(task.dueDate) < new Date(new Date().setHours(0,0,0,0)) 
+                                  ? 'text-google-red font-medium' 
+                                  : 'text-on-surface')
+                          }`}>
                             {task.title}
                           </p>
                           {task.userId !== user.uid && (
@@ -653,7 +667,7 @@ const App = () => {
                         </button>
                         {user && task.userId === user.uid && (
                           <button
-                            onClick={(e) => { e.stopPropagation(); deleteTask(task.id, task.userId); }}
+                            onClick={(e) => { e.stopPropagation(); deleteTask(task.id, task.title, task.userId); }}
                             className="p-2 text-on-variant hover:text-google-red hover:bg-red-50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                           >
                             <Trash2 size={20} />
@@ -681,6 +695,8 @@ const App = () => {
         isOpen={isModalOpen}
         onClose={() => { setIsModalOpen(false); setEditingTask(null); }}
         onSave={handleSaveTask}
+        onDelete={deleteTask}
+        onToggleComplete={toggleTask}
         initialData={editingTask}
         categories={categories}
         isReadOnly={editingTask && editingTask.userId !== user.uid}
@@ -697,6 +713,13 @@ const App = () => {
         title={statusModal.title}
         message={statusModal.message}
         onClose={() => setStatusModal({ ...statusModal, isOpen: false })}
+      />
+
+      <ConfirmDeletionModal
+        isOpen={deletionConfirm.isOpen}
+        title={deletionConfirm.taskTitle}
+        onClose={() => setDeletionConfirm({ ...deletionConfirm, isOpen: false })}
+        onConfirm={confirmDelete}
       />
     </div>
   );

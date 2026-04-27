@@ -1,5 +1,4 @@
-import React from 'react';
-import { Lock, X } from 'lucide-react';
+import { Lock } from 'lucide-react';
 
 const StatusModal = ({ isOpen, onClose, title, message }) => {
   if (!isOpen) return null;

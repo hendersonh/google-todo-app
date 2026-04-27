@@ -87,3 +87,64 @@ Encourages collaboration and visibility while maintaining data integrity and sec
 **Type:** architecture  
 **Tags:** security, architecture, permissions, firestore  
 **Updated:** 4/26/2026
+
+
+## project-roadmap-v1
+
+# Google Todo App Roadmap
+
+### Phase 1: Core Privacy & Stability (COMPLETED)
+- [x] Shared tasks with private-read enforcement.
+- [x] Custom categories with owner-only privacy.
+- [x] Systematic debugging of recurrence and search.
+- [x] Premium UX (Material Modal alerts).
+
+### Phase 2: Deployment & Performance (READY)
+- [ ] Deploy to Firebase Hosting (Classic).
+- [ ] SPA Routing configuration.
+- [ ] Asset optimization (Caching headers).
+
+### Phase 3: Advanced Features (PENDING)
+- [ ] Offline support (Service Workers).
+- [ ] Multi-platform sync verification.
+- [ ] Analytics and monitoring.
+
+**Type:** architecture  
+**Tags:** roadmap, long-term-goals  
+**Updated:** 4/26/2026
+
+
+## architecture-hosting-config
+
+# Firebase Hosting Configuration (SPA)
+
+### Deployment Details
+- **Production URL**: [https://todolist-c6c81.web.app](https://todolist-c6c81.web.app)
+- **Project ID**: `todolist-c6c81`
+- **Build Tool**: Vite (`npm run build`)
+- **Public Directory**: `dist`
+
+### SPA Routing Rule
+To support client-side routing (React Router) on page refreshes, a rewrite rule is mandatory in `firebase.json`:
+```json
+{
+  "hosting": {
+    "public": "dist",
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  }
+}
+```
+
+### Verification
+- **Preview Channels**: Used for iterative testing of safety features (e.g., `confirm-deletion-v3`).
+- **Production**: Deployed via `firebase deploy --only hosting`.
+
+**Type:** architecture  
+**Tags:** architecture, hosting, firebase, spa  
+**Updated:** 4/27/2026

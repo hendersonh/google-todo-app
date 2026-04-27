@@ -1,0 +1,24 @@
+{
+  "score": 4,
+  "summary": "The rules implement basic ownership-based access control which prevents unauthorized users from reading or writing other users' data. However, they lack robust validation (type checks, size limits) and allow users to potentially corrupt their own data or bypass field-level constraints on update.",
+  "findings": [
+    {
+      "check": "The Update Bypass",
+      "severity": "minor",
+      "issue": "The 'update' rule for tasks and categories only checks the existing ownership (resource.data.userId/ownerUid) but does not ensure the updated data (request.resource.data) maintains the same owner ID, potentially allowing a user to transfer ownership to another UID (though they wouldn't be able to read it anymore).",
+      "recommendation": "Add '&& request.resource.data.userId == request.auth.uid' to update rules."
+    },
+    {
+      "check": "Storage Abuse",
+      "severity": "minor",
+      "issue": "No string length or array size limits on task titles, descriptions, or subtasks. This could lead to resource exhaustion if a malicious user (or accidental bug) writes extremely large strings.",
+      "recommendation": "Implement size limits: request.resource.data.title.size() < 100."
+    },
+    {
+      "check": "Type Safety",
+      "severity": "minor",
+      "issue": "Missing type validation (e.g., ensuring 'completed' is a boolean, 'dueDate' is a string/timestamp).",
+      "recommendation": "Add type checks: request.resource.data.completed is bool."
+    }
+  ]
+}

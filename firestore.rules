@@ -7,21 +7,30 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // Helper function to check if user is the owner
-    function isOwner(userId) {
-      return isAuthenticated() && request.auth.uid == userId;
-    }
-
     match /tasks/{taskId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      allow update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() 
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.title is string
+        && request.resource.data.title.size() <= 200;
+      allow update: if isAuthenticated() 
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == request.auth.uid
+        && (request.resource.data.title is string ? request.resource.data.title.size() <= 200 : true);
+      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
     }
 
     match /categories/{categoryId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && request.resource.data.ownerUid == request.auth.uid;
-      allow update, delete: if isAuthenticated() && resource.data.ownerUid == request.auth.uid;
+      allow read: if isAuthenticated() && resource.data.ownerUid == request.auth.uid;
+      allow create: if isAuthenticated() 
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.name is string
+        && request.resource.data.name.size() <= 50;
+      allow update: if isAuthenticated() 
+        && resource.data.ownerUid == request.auth.uid
+        && request.resource.data.ownerUid == request.auth.uid
+        && (request.resource.data.name is string ? request.resource.data.name.size() <= 50 : true);
+      allow delete: if isAuthenticated() && resource.data.ownerUid == request.auth.uid;
     }
 
     // Fallback for other collections

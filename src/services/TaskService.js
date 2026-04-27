@@ -37,6 +37,7 @@ export const TaskService = {
 
     const q = query(
       collection(db, CATEGORIES_COLLECTION),
+      where("ownerUid", "==", userId),
       orderBy("createdAt", "asc")
     );
 
@@ -72,10 +73,14 @@ export const TaskService = {
 
   // Create a listener for tasks
   subscribeToTasks: (userId, callback) => {
-    // For now, let's show all tasks so legacy tasks (without userId) are visible
-    // We can add more granular filtering later
+    if (!userId) {
+      callback([]);
+      return () => { };
+    }
+
     const q = query(
       collection(db, TASKS_COLLECTION),
+      where("userId", "==", userId),
       orderBy("createdAt", "desc")
     );
 
@@ -106,8 +111,8 @@ export const TaskService = {
       subtasks: taskData.subtasks || [],
       userId: taskData.userId, // Required for security rules
       ownerName: taskData.ownerName || "Anonymous",
+      ...taskData,
       createdAt: serverTimestamp(),
-      ...taskData
     };
     // Remove id if it exists (Firestore generates it)
     delete task.id;

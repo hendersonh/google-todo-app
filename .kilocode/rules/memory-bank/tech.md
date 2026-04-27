@@ -163,3 +163,36 @@ Ensures the sidebar remains relevant to the current user while allowing the glob
 **Type:** decision  
 **Tags:** privacy, security, categories, decision  
 **Updated:** 4/26/2026
+
+
+## session-status-2026-04-26-v1
+
+# Session Summary: 2026-04-26 (Post-Debug & Hosting Plan)
+
+### Accomplishments
+- **Systematic Debugging Pass**: Identified and fixed 4 critical bugs:
+    1. **Privacy Leak**: Custom categories were public; now secured via `ownerUid` query and Firestore rules.
+    2. **Timestamp Corruption**: Fixed `addTask` to prevent recurring tasks from overwriting server timestamps with local strings.
+    3. **Search Crash**: Added null-checks for task titles in `App.jsx`.
+    4. **Sidebar Deduplication**: Prevented ID collisions between default and dynamic lists.
+- **Hosting Plan**: Created a 7-step plan to deploy the app to Firebase Cloud Hosting (Classic).
+
+### Current State
+- **Firestore Rules**: Deployed version includes privacy enforcement for categories.
+- **Codebase**: Stable and ready for production build.
+- **Artifacts**: 
+    - `debugging_report.md` (Detailed bug analysis)
+    - `hosting_plan.md` (Step-by-step deploy strategy)
+
+### Next Steps
+1. Execute **Step 1** of the hosting plan: `npm run build` and verify the `dist/` bundle.
+2. Initialize and deploy to Firebase Hosting.
+3. (Optional) Set up GitHub Actions for CI/CD.
+
+### Session Metadata
+- **Status**: PAUSED
+- **Last Action**: Systematic debugging pass confirmed and indexed.
+
+**Type:** decision  
+**Tags:** session-summary, progress-report, debugging, hosting-plan  
+**Updated:** 4/26/2026
