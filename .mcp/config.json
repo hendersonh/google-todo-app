@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "firebase-admin": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@firebase/mcp-server"
+      ],
+      "env": {
+        "PROJECT_ID": "todolist-c6c81"
+      }
+    }
+  }
+}

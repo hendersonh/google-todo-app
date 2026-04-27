@@ -12,11 +12,16 @@ service cloud.firestore {
       allow create: if isAuthenticated() 
         && request.resource.data.userId == request.auth.uid
         && request.resource.data.title is string
-        && request.resource.data.title.size() <= 200;
+        && request.resource.data.title.size() <= 200
+        && (request.resource.data.get('completed', false) is bool)
+        && (request.resource.data.get('starred', false) is bool)
+        && (request.resource.data.get('category', 'personal') is string);
       allow update: if isAuthenticated() 
         && resource.data.userId == request.auth.uid
         && request.resource.data.userId == request.auth.uid
-        && (request.resource.data.title is string ? request.resource.data.title.size() <= 200 : true);
+        && (request.resource.data.title is string ? request.resource.data.title.size() <= 200 : true)
+        && (request.resource.data.get('completed', resource.data.completed) is bool)
+        && (request.resource.data.get('starred', resource.data.starred) is bool);
       allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
     }
 
@@ -24,12 +29,13 @@ service cloud.firestore {
       allow read: if isAuthenticated() && resource.data.ownerUid == request.auth.uid;
       allow create: if isAuthenticated() 
         && request.resource.data.ownerUid == request.auth.uid
-        && request.resource.data.name is string
-        && request.resource.data.name.size() <= 50;
+        && request.resource.data.label is string
+        && request.resource.data.label.size() <= 50
+        && (request.resource.data.get('color', '#4285F4') is string);
       allow update: if isAuthenticated() 
         && resource.data.ownerUid == request.auth.uid
         && request.resource.data.ownerUid == request.auth.uid
-        && (request.resource.data.name is string ? request.resource.data.name.size() <= 50 : true);
+        && (request.resource.data.label is string ? request.resource.data.label.size() <= 50 : true);
       allow delete: if isAuthenticated() && resource.data.ownerUid == request.auth.uid;
     }
 
