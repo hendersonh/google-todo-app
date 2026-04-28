@@ -700,6 +700,7 @@ const App = () => {
         initialData={editingTask}
         categories={categories}
         isReadOnly={editingTask && editingTask.userId !== user.uid}
+        currentUserId={user?.uid}
       />
 
       <CategoryModal

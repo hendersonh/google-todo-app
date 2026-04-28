@@ -196,3 +196,26 @@ Ensures the sidebar remains relevant to the current user while allowing the glob
 **Type:** decision  
 **Tags:** session-summary, progress-report, debugging, hosting-plan  
 **Updated:** 4/26/2026
+
+
+## infrastructure-optimization-v1
+
+# Production Infrastructure Optimization (Spark Tier)
+
+Decision to optimize delivery and security without transitioning to the Blaze (Paid) tier.
+
+## Optimized Components
+- **Hosting Headers**: Configured custom headers in `firebase.json` for security and performance.
+- **Static Asset Caching**: 1-year cache (`max-age=31536000`) for immutable JS/CSS/Images.
+- **SPA Routing**: Wildcard rewrites (`**` -> `index.html`) to support deep-linking in the Single Page Application.
+- **App Check Decision**: Deferred App Check (reCAPTCHA) implementation to avoid billing dependencies while remaining secure via Firestore Rules.
+
+## Impact
+- Reduced latency for returning users via aggressive caching.
+- Hardened protection against common web attacks (Clickjacking, MIME-sniffing).
+- Maintained 100% free-tier status.
+
+
+**Type:** decision  
+**Tags:** infrastructure, performance, firebase-hosting, decision  
+**Updated:** 4/27/2026

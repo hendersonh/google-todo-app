@@ -39,6 +39,16 @@ service cloud.firestore {
       allow delete: if isAuthenticated() && resource.data.ownerUid == request.auth.uid;
     }
 
+    match /shared_links/{linkId} {
+      // Guests can read unexpired links without auth (public share links)
+      allow read: if request.time < resource.data.expiresAt;
+      // Only the authenticated owner can create/delete their own links
+      allow create: if request.auth != null
+        && request.resource.data.ownerId == request.auth.uid;
+      allow delete: if request.auth != null
+        && resource.data.ownerId == request.auth.uid;
+    }
+
     // Fallback for other collections
     match /{document=**} {
       allow read, write: if false;

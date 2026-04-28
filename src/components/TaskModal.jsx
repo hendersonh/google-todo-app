@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { X, Calendar, Star, RotateCcw, Plus, CheckSquare, Square, Trash2 } from 'lucide-react';
+import { X, Calendar, Star, RotateCcw, Plus, CheckSquare, Square, Trash2, Share2, Copy, Check } from 'lucide-react';
+import { SharingService } from '../services/SharingService';
 
 const RECURRENCE_OPTIONS = [
   { id: 'none', label: 'None' },
@@ -8,7 +9,7 @@ const RECURRENCE_OPTIONS = [
   { id: 'monthly', label: 'Monthly' },
 ];
 
-const TaskModal = ({ isOpen, onClose, onSave, onDelete, onToggleComplete, initialData, isReadOnly, categories = [] }) => {
+const TaskModal = ({ isOpen, onClose, onSave, onDelete, onToggleComplete, initialData, isReadOnly, categories = [], currentUserId }) => {
   const isCompleted = initialData?.completed || false;
   const effectiveReadOnly = isReadOnly || isCompleted;
   const [title, setTitle] = useState('');
@@ -20,6 +21,8 @@ const TaskModal = ({ isOpen, onClose, onSave, onDelete, onToggleComplete, initia
   const [subtasks, setSubtasks] = useState([]);
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
   
+  const [isSharing, setIsSharing] = useState(false);
+  const [shareSuccess, setShareSuccess] = useState(false);
   const dateInputRef = useRef(null);
 
   useEffect(() => {
@@ -72,6 +75,29 @@ const TaskModal = ({ isOpen, onClose, onSave, onDelete, onToggleComplete, initia
   const removeSubtask = (id) => {
     if (isReadOnly) return;
     setSubtasks(subtasks.filter(s => s.id !== id));
+  };
+
+  const handleShare = async () => {
+    if (!initialData?.id || isSharing) return;
+    
+    setIsSharing(true);
+    try {
+      // Generate the magic token in Firestore
+      const linkId = await SharingService.createLink(initialData, currentUserId);
+      const url = `${window.location.origin}/shared/${linkId}`;
+      
+      // Copy to clipboard
+      await navigator.clipboard.writeText(url);
+      
+      // Trigger success animation
+      setShareSuccess(true);
+      setTimeout(() => setShareSuccess(false), 2000);
+    } catch (error) {
+      console.error("Sharing failed:", error);
+      alert("Failed to generate share link.");
+    } finally {
+      setIsSharing(false);
+    }
   };
 
   const handleSubmit = (e) => {
@@ -254,15 +280,36 @@ const TaskModal = ({ isOpen, onClose, onSave, onDelete, onToggleComplete, initia
           <div className="p-4 bg-gray-50 flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               {!isReadOnly && initialData?.id && (
-                <button 
-                  type="button" 
-                  onClick={() => { onDelete(initialData.id, initialData.title, initialData.userId); onClose(); }}
-                  className="p-2 text-on-variant hover:text-google-red hover:bg-red-50 rounded-lg transition-colors flex items-center gap-2 text-sm font-medium"
-                  title="Delete Task"
-                >
-                  <Trash2 size={18} />
-                  <span className="hidden sm:inline">Delete</span>
-                </button>
+                <div className="flex items-center gap-1">
+                  <button 
+                    type="button" 
+                    onClick={() => { onDelete(initialData.id, initialData.title, initialData.userId); onClose(); }}
+                    className="p-2 text-on-variant hover:text-google-red hover:bg-red-50 rounded-lg transition-colors flex items-center gap-2 text-sm font-medium"
+                    title="Delete Task"
+                  >
+                    <Trash2 size={18} />
+                    <span className="hidden sm:inline">Delete</span>
+                  </button>
+
+                  <button 
+                    type="button" 
+                    onClick={handleShare}
+                    disabled={isSharing}
+                    className={`p-2 rounded-lg transition-all flex items-center gap-2 text-sm font-medium ${
+                      shareSuccess ? 'bg-green-50 text-green-600' : 'text-on-variant hover:text-google-blue hover:bg-blue-50'
+                    }`}
+                    title="Share Task"
+                  >
+                    {isSharing ? (
+                      <div className="w-4 h-4 border-2 border-google-blue border-t-transparent rounded-full animate-spin" />
+                    ) : shareSuccess ? (
+                      <Check size={18} />
+                    ) : (
+                      <Share2 size={18} />
+                    )}
+                    <span className="hidden sm:inline">{shareSuccess ? 'Link Copied!' : 'Share'}</span>
+                  </button>
+                </div>
               )}
             </div>
             

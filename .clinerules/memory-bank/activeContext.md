@@ -96,3 +96,33 @@ A hybrid state for completed tasks where data is protected from accidental edits
 **Type:** pattern  
 **Tags:** pattern, ux, completed-tasks  
 **Updated:** 4/27/2026
+
+
+## zero-trust-security-pattern-v1
+
+# Zero-Trust Firestore Security Pattern
+
+Verified implementation of multi-user data isolation on the Firebase Spark (Free) tier.
+
+## Core Principles
+1. **Authenticated Access Only**: All reads/writes require a valid Firebase Auth session.
+2. **Owner-Only Ownership**: Data is isolated at the field level using `resource.data.userId == request.auth.uid`.
+3. **Type & Schema Validation**: Firestore rules enforce:
+    - Field existence (e.g., `completed`, `starred`).
+    - Type safety (boolean, string).
+    - Length constraints (titles < 200 chars, categories < 50 chars).
+4. **Poka-Yoke Deletion**: UI-level "Safe Delete" requiring explicit confirmation ("yes") to prevent accidental data loss.
+
+## Verified Implementation
+- **Rules**: `firestore.rules` updated and validated with Firebase CLI.
+- **Headers**: `X-Frame-Options: DENY` and `X-Content-Type-Options: nosniff` active.
+- **Isolation**: Manually verified isolation between `user_a@example.com` and `user_b@example.com` on the live production site.
+
+## Related Artifacts
+- `Hosting-phase2-enhanced-plan.md`
+- `firestore.rules`
+- `firebase.json`
+
+**Type:** pattern  
+**Tags:** security, firestore, firebase-hosting, spark-tier  
+**Updated:** 4/27/2026

@@ -165,3 +165,68 @@ High-risk, irreversible actions should require intentional effort (Friction by D
 **Type:** feature  
 **Tags:** feature, ux, safety, poka-yoke  
 **Updated:** 4/27/2026
+
+
+## feature-shared-task-magic-links-v1
+
+# Feature: Shared Task Magic Links (Phase 3 Collaboration)
+
+## Overview
+Owners can share any task via a time-limited, public read-only URL. No login required for recipients.
+
+## Architecture: Token Vault Pattern
+- **Collection**: `shared_links/{linkId}` (flat, top-level)
+- **Document Fields**:
+  | Field | Type | Description |
+  |---|---|---|
+  | `taskId` | string | Source task document ID |
+  | `ownerId` | string | Firebase Auth UID of the sharer |
+  | `expiresAt` | Timestamp | 7 days from creation |
+  | `createdAt` | serverTimestamp | Write time |
+  | `taskSnapshot` | map | Frozen copy of task data at share time |
+- **Snapshot fields stored**: `title`, `details`, `completed`, `category`, `starred`, `dueDate`, `subtasks[]`
+
+## Firestore Security Rules
+```
+match /shared_links/{linkId} {
+  // Guests can read unexpired links without auth
+  allow read: if request.time < resource.data.expiresAt;
+  // Only authenticated owner can create/delete
+  allow create: if request.auth != null && request.resource.data.ownerId == request.auth.uid;
+  allow delete: if request.auth != null && resource.data.ownerId == request.auth.uid;
+}
+```
+**Critical bug history**: `isAuthenticated()` helper was wrapping the `request.auth != null` check but caused intermittent failures in browser auth state propagation. Fixed by using inline `request.auth != null &&` check directly — more reliable in Firestore rules evaluation.
+
+## Service Layer
+- **File**: `src/services/SharingService.js`
+- **`createLink(task, ownerId)`**: Generates a `crypto.randomUUID()` linkId, writes snapshot to Firestore, returns linkId.
+- **`getSharedTask(linkId)`**: Reads the document, checks expiry client-side, returns `taskSnapshot`.
+- **Key**: `ownerId` is always taken from `currentUserId` prop (Firebase Auth UID), NEVER from `task.userId` — prevents ownership mismatch.
+
+## UI Integration
+- **Share Button**: Added to `TaskModal.jsx` bottom action bar (alongside Delete). Shows loading spinner → green "Link Copied!" checkmark on success. Only visible for non-read-only, existing tasks.
+- **`currentUserId` prop**: `App.jsx` passes `user?.uid` to `TaskModal` to guarantee the auth UID is used for sharing, not the task's stored `userId`.
+
+## Guest View
+- **Route**: `/shared/:linkId`
+- **Component**: `src/pages/SharedTaskPage.jsx`
+- **Router**: `react-router-dom` added; `BrowserRouter` wraps app in `main.jsx`. Route `/shared/:linkId` renders guest page; `/*` renders main `App`.
+- **Vite Config**: `server.historyApiFallback: true` added for SPA deep link support.
+- **Firebase Hosting**: `firebase.json` rewrites rule `** → /index.html` already handles production routing.
+- **Guest view renders**: Task title, details, Important star, category pill (colored), due date chip (blue), subtask list with progress bar, "Completed" badge if applicable, "7-day expiry" notice.
+- **No auth required** — intentional, by design.
+
+## Kaizen Improvement (Post-launch)
+After initial launch, `dueDate` was missing from the snapshot and guest view. Fixed atomically:
+1. `SharingService.js`: Added `dueDate: task.dueDate || null` to `taskSnapshot`.
+2. `SharedTaskPage.jsx`: Added blue "Due [date]" chip in meta section using `toLocaleDateString`.
+
+## Known Gotchas
+- **Stale links**: Links created during the debugging phase (when snapshot was temporarily simplified to `{title}` only) only show the task title. Re-sharing the task generates a new full-data link.
+- **No revocation UI**: Owner can't invalidate a link from the app (deletion requires direct Firestore access). Future enhancement.
+- **Expiry**: `expiresAt` is checked at read time by Firestore rules. Expired links return a permission error, not a 404 — handled gracefully in `SharedTaskPage` with an "expired link" error state.
+
+**Type:** feature  
+**Tags:** feature, phase3, collaboration, sharing, firestore, routing, react-router  
+**Updated:** 4/27/2026
